@@ -43,6 +43,7 @@ export interface AppState {
 
   // Predictions & Explainability
   predictions: Record<Target, Prediction> | null;
+  baselinePredictions: Record<Target, Prediction> | null; // Baseline predictions for What-If delta comparison
   explanation: Explanation | null;
   selectedVessel: Target | null; // null = CAD / Whole Heart
   metrics: MetricsBundle | null;
@@ -98,6 +99,7 @@ export const useAppStore = create<AppState>()(
       patientRiskTier: null,
 
       predictions: null,
+      baselinePredictions: null,
       explanation: null,
       selectedVessel: null,
       metrics: null,
@@ -147,19 +149,19 @@ export const useAppStore = create<AppState>()(
         try {
           const patientDetail = await api.getPatient(id);
           const features = { ...patientDetail.features };
+          const predRes = await api.predict(features);
 
           set({
             patient: features,
             baseline: { ...features },
+            predictions: predRes.predictions,
+            baselinePredictions: { ...predRes.predictions },
             patientSummary: patientDetail.summary,
             patientRiskTier: patientDetail.risk_tier,
           });
 
-          // Run immediate prediction and explanation
-          await Promise.all([
-            get().predictImmediate(),
-            get().explain(get().selectedVessel, false),
-          ]);
+          // Fetch explanation for active vessel
+          await get().explain(get().selectedVessel, false);
 
           set({ status: 'idle' });
         } catch (err: unknown) {
@@ -319,6 +321,7 @@ export const useAppStore = create<AppState>()(
           patientSummary: null,
           patientRiskTier: null,
           predictions: null,
+          baselinePredictions: null,
           explanation: null,
           selectedVessel: null,
         }),
