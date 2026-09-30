@@ -4,7 +4,7 @@ import { TopBar } from './TopBar';
 import { MobileTabBar } from './MobileTabBar';
 import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
-import { PatientRailPlaceholder } from '../placeholders/PatientRailPlaceholder';
+import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
 import { DashboardRailPlaceholder } from '../placeholders/DashboardRailPlaceholder';
 import { StateDebugPanel } from '../debug/StateDebugPanel';
@@ -42,7 +42,7 @@ export const AppLayout: React.FC = () => {
         {/* Desktop 3-Zone Console Layout (>= 1024px) */}
         <div className="hidden lg:flex flex-row items-stretch gap-4 xl:gap-5 flex-1">
           {/* Zone 1: Patient Input & Controls */}
-          <PatientRailPlaceholder />
+          <PatientRail />
 
           {/* Zone 2: Interactive 3D Heart Viewer Stage */}
           <main className="flex-1 flex flex-col min-h-[540px] lg:min-h-[660px]">
@@ -78,7 +78,7 @@ export const AppLayout: React.FC = () => {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <PatientRailPlaceholder />
+                <PatientRail />
               </motion.div>
             )}
 
