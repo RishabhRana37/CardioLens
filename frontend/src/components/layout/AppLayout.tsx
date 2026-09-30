@@ -4,6 +4,7 @@ import { TopBar } from './TopBar';
 import { MobileTabBar } from './MobileTabBar';
 import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
+import { ModelTrustDrawer } from '../trust/ModelTrustDrawer';
 import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
 import { ClinicalDashboard } from '../dashboard/ClinicalDashboard';
@@ -103,6 +104,9 @@ export const AppLayout: React.FC = () => {
 
       {/* Mandatory Clinical Disclaimer Modal (Req 5) */}
       <DisclaimerModal />
+
+      {/* Model Trust & Rigor Drawer (Req 7.4) */}
+      <ModelTrustDrawer />
 
       {/* Temporary Interactive State Debug Panel */}
       <StateDebugPanel />

@@ -23,6 +23,7 @@ export interface AppState {
 
   // Modals & Navigation
   isDisclaimerModalOpen: boolean;
+  isModelTrustOpen: boolean;
   activeMobileTab: MobileTab;
 
   // Boot & Initialization
@@ -69,6 +70,8 @@ export interface AppState {
   setDisclaimerAcknowledged: (ack: boolean) => void;
   openDisclaimerModal: () => void;
   closeDisclaimerModal: () => void;
+  openModelTrust: () => void;
+  closeModelTrust: () => void;
   setActiveMobileTab: (tab: MobileTab) => void;
   clearPatient: () => void;
 }
@@ -83,6 +86,7 @@ export const useAppStore = create<AppState>()(
 
       // Default Session State
       isDisclaimerModalOpen: false,
+      isModelTrustOpen: false,
       activeMobileTab: 'heart',
       isInitialized: false,
       status: 'idle',
@@ -310,6 +314,9 @@ export const useAppStore = create<AppState>()(
 
       openDisclaimerModal: () => set({ isDisclaimerModalOpen: true }),
       closeDisclaimerModal: () => set({ isDisclaimerModalOpen: false }),
+
+      openModelTrust: () => set({ isModelTrustOpen: true }),
+      closeModelTrust: () => set({ isModelTrustOpen: false }),
 
       setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
 

@@ -4,6 +4,7 @@ import {
   Activity,
   Heart,
   ShieldAlert,
+  ShieldCheck,
   Sun,
   Moon,
   Sparkles,
@@ -22,6 +23,7 @@ export const TopBar: React.FC = () => {
     patientSummary,
     patientRiskTier,
     openDisclaimerModal,
+    openModelTrust,
   } = useAppStore();
 
   const qualityOptions: { id: GraphicQuality; label: string; icon: React.FC<{ className?: string }> }[] = [
@@ -131,6 +133,19 @@ export const TopBar: React.FC = () => {
             ) : (
               <Moon className="w-4 h-4 text-slate-300" />
             )}
+          </button>
+
+          {/* Model Trust Validation Modal / Drawer Trigger */}
+          <button
+            onClick={openModelTrust}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-950/70 border border-teal-500/40 text-teal-300 hover:bg-teal-900/80 transition-colors text-xs font-mono font-medium shadow-xs group"
+            title="Inspect 10-fold cross-validation metrics, ROC curves, calibration, and global SHAP hierarchy"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline text-[11px] font-bold">Model Trust</span>
+            <span className="text-[9px] px-1 py-0.2 rounded bg-teal-900/90 text-teal-200 border border-teal-500/30">
+              AUC 0.94
+            </span>
           </button>
 
           {/* Condensed Disclaimer Pill (Req 5) */}
