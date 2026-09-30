@@ -5,7 +5,7 @@ import { MobileTabBar } from './MobileTabBar';
 import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
 import { PatientRailPlaceholder } from '../placeholders/PatientRailPlaceholder';
-import { HeartStagePlaceholder } from '../placeholders/HeartStagePlaceholder';
+import { HeartScene } from '../../three/HeartScene';
 import { DashboardRailPlaceholder } from '../placeholders/DashboardRailPlaceholder';
 import { StateDebugPanel } from '../debug/StateDebugPanel';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,8 +44,10 @@ export const AppLayout: React.FC = () => {
           {/* Zone 1: Patient Input & Controls */}
           <PatientRailPlaceholder />
 
-          {/* Zone 2: 3D Heart Viewer Stage */}
-          <HeartStagePlaceholder />
+          {/* Zone 2: Interactive 3D Heart Viewer Stage */}
+          <main className="flex-1 flex flex-col min-h-[540px] lg:min-h-[660px]">
+            <HeartScene />
+          </main>
 
           {/* Zone 3: Clinical Dashboard */}
           <DashboardRailPlaceholder />
@@ -61,9 +63,9 @@ export const AppLayout: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 flex flex-col"
+                className="flex-1 flex flex-col min-h-[500px]"
               >
-                <HeartStagePlaceholder />
+                <HeartScene />
               </motion.div>
             )}
 
