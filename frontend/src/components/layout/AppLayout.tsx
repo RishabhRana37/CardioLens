@@ -6,7 +6,7 @@ import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
 import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
-import { DashboardRailPlaceholder } from '../placeholders/DashboardRailPlaceholder';
+import { ClinicalDashboard } from '../dashboard/ClinicalDashboard';
 import { StateDebugPanel } from '../debug/StateDebugPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -50,7 +50,7 @@ export const AppLayout: React.FC = () => {
           </main>
 
           {/* Zone 3: Clinical Dashboard */}
-          <DashboardRailPlaceholder />
+          <ClinicalDashboard />
         </div>
 
         {/* Mobile / Tablet Tabbed View (< 1024px) */}
@@ -91,7 +91,7 @@ export const AppLayout: React.FC = () => {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                 className="flex-1 flex flex-col"
               >
-                <DashboardRailPlaceholder />
+                <ClinicalDashboard />
               </motion.div>
             )}
           </AnimatePresence>
@@ -110,4 +110,5 @@ export const AppLayout: React.FC = () => {
   );
 };
 
-export default AppLayout;
+export const App = AppLayout;
+
