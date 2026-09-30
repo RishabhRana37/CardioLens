@@ -7,10 +7,16 @@ import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
 import { PatientRailPlaceholder } from '../placeholders/PatientRailPlaceholder';
 import { HeartStagePlaceholder } from '../placeholders/HeartStagePlaceholder';
 import { DashboardRailPlaceholder } from '../placeholders/DashboardRailPlaceholder';
+import { StateDebugPanel } from '../debug/StateDebugPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppLayout: React.FC = () => {
-  const { theme, activeMobileTab } = useAppStore();
+  const { theme, activeMobileTab, init } = useAppStore();
+
+  // Boot foundation data on app mount
+  useEffect(() => {
+    init();
+  }, [init]);
 
   // Apply theme class to <html> element
   useEffect(() => {
@@ -95,6 +101,9 @@ export const AppLayout: React.FC = () => {
 
       {/* Mandatory Clinical Disclaimer Modal (Req 5) */}
       <DisclaimerModal />
+
+      {/* Temporary Interactive State Debug Panel */}
+      <StateDebugPanel />
     </div>
   );
 };

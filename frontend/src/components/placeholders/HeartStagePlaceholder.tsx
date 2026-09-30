@@ -1,30 +1,41 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { getRiskColor } from '../../tokens';
 import { Target } from '../../api/types';
+import { VESSELS, VESSEL_LIST, VesselKey } from '../../config/vessels.config';
 import {
   Heart,
   RotateCcw,
   ZoomIn,
   MousePointerClick,
   Box,
+  RefreshCw,
 } from 'lucide-react';
 
 export const HeartStagePlaceholder: React.FC = () => {
-  const { selectedVessel, setSelectedVessel, quality } = useAppStore();
+  const {
+    selectedVessel,
+    selectVessel,
+    quality,
+    predictions,
+    colorFor,
+    isPredicting,
+  } = useAppStore();
 
-  const vessels: { id: Target; name: string; full: string; mockProb: number }[] = [
-    { id: 'LAD', name: 'LAD', full: 'Left Anterior Descending', mockProb: 0.74 },
-    { id: 'LCX', name: 'LCX', full: 'Left Circumflex', mockProb: 0.22 },
-    { id: 'RCA', name: 'RCA', full: 'Right Coronary Artery', mockProb: 0.61 },
-  ];
+  const activeTarget: Target = selectedVessel || 'CAD';
+  const activePred = predictions?.[activeTarget];
+  const activeColor = colorFor(activeTarget);
 
   return (
     <main className="flex-1 flex flex-col gap-3 min-h-[500px] lg:min-h-[640px] relative">
       {/* 3D Stage Glass Canvas Container */}
-      <div className="relative flex-1 rounded-2xl bg-gradient-to-b from-slate-950/90 via-[#060911] to-[#04060a] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between p-4 sm:p-6 group">
-        {/* Subtle stage radial spotlight glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(13,148,136,0.12)_0%,transparent_65%)] pointer-events-none" />
+      <div className="relative flex-1 rounded-2xl bg-gradient-to-b from-slate-950/90 via-[#060911] to-[#04060a] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between p-4 sm:p-6 group transition-colors">
+        {/* Subtle stage spotlight glow dynamically tinted to active target's risk color */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20 transition-all duration-700"
+          style={{
+            background: `radial-gradient(circle at center, ${activeColor} 0%, transparent 65%)`,
+          }}
+        />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-40" />
 
         {/* Top Controls Overlay */}
@@ -35,15 +46,20 @@ export const HeartStagePlaceholder: React.FC = () => {
             <span>R3F 3D Stage</span>
             <span className="text-slate-600">|</span>
             <span className="text-teal-300 capitalize">{quality} Mode</span>
+            {isPredicting && (
+              <span className="flex items-center gap-1 text-amber-400 pl-1">
+                <RefreshCw className="w-3 h-3 animate-spin" /> Live Recolor
+              </span>
+            )}
           </div>
 
-          {/* Reset Camera / Controls */}
+          {/* Reset Camera / Target Switcher */}
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => setSelectedVessel(null)}
+              onClick={() => selectVessel(null)}
               className={`px-3 py-1.5 rounded-xl border text-xs font-mono transition-all backdrop-blur-md ${
                 selectedVessel === null
-                  ? 'bg-teal-950/80 border-teal-500/40 text-teal-300 font-semibold'
+                  ? 'bg-teal-950/80 border-teal-500/40 text-teal-300 font-semibold shadow-glow-teal'
                   : 'bg-slate-900/70 border-white/10 text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -51,6 +67,7 @@ export const HeartStagePlaceholder: React.FC = () => {
             </button>
             <button
               title="Reset Orbit Camera"
+              onClick={() => selectVessel(null)}
               className="p-1.5 rounded-xl bg-slate-900/70 border border-white/10 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors backdrop-blur-md"
             >
               <RotateCcw className="w-4 h-4" />
@@ -61,44 +78,63 @@ export const HeartStagePlaceholder: React.FC = () => {
         {/* Center 3D Model Placeholder Graphic */}
         <div className="relative z-10 flex flex-col items-center justify-center my-auto py-8 text-center space-y-4">
           <div className="relative">
-            {/* Pulsing ring aura */}
-            <div className="absolute -inset-6 rounded-full bg-teal-500/10 blur-xl animate-pulse" />
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl bg-gradient-to-br from-slate-900/90 to-slate-950/90 border border-teal-500/30 flex items-center justify-center shadow-glow-teal relative">
-              <Heart className="w-14 h-14 sm:w-16 sm:h-16 text-teal-400 animate-pulse stroke-[1.5]" />
+            {/* Dynamic risk aura glow matching active probability */}
+            <div
+              className="absolute -inset-8 rounded-full blur-2xl transition-all duration-500 opacity-40 animate-pulse"
+              style={{ backgroundColor: activeColor }}
+            />
+            <div
+              className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl bg-gradient-to-br from-slate-900/95 to-slate-950/95 border flex flex-col items-center justify-center relative shadow-2xl transition-all duration-500"
+              style={{ borderColor: `${activeColor}60` }}
+            >
+              <Heart
+                className="w-14 h-14 sm:w-16 sm:h-16 animate-pulse stroke-[1.5] transition-colors duration-500"
+                style={{ color: activeColor }}
+              />
+              <span className="text-[10px] font-mono font-bold uppercase mt-1 tracking-wider text-slate-300">
+                {activeTarget} {activePred ? `${(activePred.probability * 100).toFixed(0)}%` : ''}
+              </span>
             </div>
           </div>
 
           <div className="space-y-1.5 max-w-sm">
             <h3 className="text-base sm:text-lg font-bold text-slate-100 tracking-tight">
-              Interactive Coronary Tree (3D)
+              {selectedVessel && selectedVessel !== 'CAD'
+                ? VESSELS[selectedVessel as VesselKey].label
+                : 'Coronary Artery Tree'}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              React Three Fiber stage ready for Draco-compressed 3D mesh with per-vessel shader color binding.
+              {selectedVessel && selectedVessel !== 'CAD'
+                ? VESSELS[selectedVessel as VesselKey].description
+                : 'Click any coronary artery below to focus the 3D camera and trigger localized SHAP feature attribution.'}
             </p>
           </div>
 
-          {/* Direct Interactive Vessel Selection Test Pills */}
+          {/* Direct Interactive Vessel Selection Pills */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            {vessels.map((v) => {
-              const isSelected = selectedVessel === v.id;
-              const color = getRiskColor(v.mockProb);
+            {VESSEL_LIST.map((vKey) => {
+              const vConfig = VESSELS[vKey];
+              const isSelected = selectedVessel === vKey;
+              const prob = predictions?.[vKey]?.probability ?? 0.2;
+              const color = colorFor(vKey);
+
               return (
                 <button
-                  key={v.id}
-                  onClick={() => setSelectedVessel(v.id)}
+                  key={vKey}
+                  onClick={() => selectVessel(vKey)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all duration-200 ${
                     isSelected
-                      ? 'bg-slate-900 border-white/30 text-white shadow-glass-md scale-105'
-                      : 'bg-slate-950/60 border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/20'
+                      ? 'bg-slate-900 border-white/40 text-white shadow-glass-md scale-105 ring-1 ring-teal-500/30'
+                      : 'bg-slate-950/60 border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/25'
                   }`}
                 >
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-colors duration-300"
                     style={{ backgroundColor: color }}
                   />
-                  <span>{v.name}</span>
+                  <span>{vConfig.name}</span>
                   <span className="text-[11px] tabular-nums font-semibold" style={{ color }}>
-                    {(v.mockProb * 100).toFixed(0)}%
+                    {(prob * 100).toFixed(0)}%
                   </span>
                 </button>
               );
@@ -121,11 +157,11 @@ export const HeartStagePlaceholder: React.FC = () => {
           {/* Interaction Guide */}
           <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono">
             <span className="flex items-center gap-1">
-              <MousePointerClick className="w-3 h-3 text-teal-400" /> Click vessel to isolate
+              <MousePointerClick className="w-3 h-3 text-teal-400" /> Click artery to inspect
             </span>
             <span>·</span>
             <span className="flex items-center gap-1">
-              <ZoomIn className="w-3 h-3 text-teal-400" /> Scroll to zoom
+              <ZoomIn className="w-3 h-3 text-teal-400" /> Orbit & zoom
             </span>
           </div>
         </div>
