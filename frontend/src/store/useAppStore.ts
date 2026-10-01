@@ -14,6 +14,7 @@ import { riskGradient } from '../three/colorScale';
 export type GraphicQuality = 'cinematic' | 'balanced' | 'performance';
 export type AppTheme = 'dark' | 'light';
 export type MobileTab = 'heart' | 'inputs' | 'results';
+export type AppSection = 'heart' | 'inputs' | 'metrics' | 'split';
 
 export interface AppState {
   // Application Settings & System Preferences (Persisted)
@@ -24,6 +25,7 @@ export interface AppState {
   // Modals & Navigation
   isDisclaimerModalOpen: boolean;
   isModelTrustOpen: boolean;
+  activeSection: AppSection;
   activeMobileTab: MobileTab;
 
   // Boot & Initialization
@@ -72,6 +74,7 @@ export interface AppState {
   closeDisclaimerModal: () => void;
   openModelTrust: () => void;
   closeModelTrust: () => void;
+  setActiveSection: (section: AppSection) => void;
   setActiveMobileTab: (tab: MobileTab) => void;
   clearPatient: () => void;
 }
@@ -87,6 +90,7 @@ export const useAppStore = create<AppState>()(
       // Default Session State
       isDisclaimerModalOpen: false,
       isModelTrustOpen: false,
+      activeSection: 'heart',
       activeMobileTab: 'heart',
       isInitialized: false,
       status: 'idle',
@@ -318,7 +322,24 @@ export const useAppStore = create<AppState>()(
       openModelTrust: () => set({ isModelTrustOpen: true }),
       closeModelTrust: () => set({ isModelTrustOpen: false }),
 
-      setActiveMobileTab: (tab) => set({ activeMobileTab: tab }),
+      setActiveSection: (section) => {
+        const mobileMap: Record<AppSection, MobileTab> = {
+          heart: 'heart',
+          inputs: 'inputs',
+          metrics: 'results',
+          split: 'heart',
+        };
+        set({ activeSection: section, activeMobileTab: mobileMap[section] });
+      },
+
+      setActiveMobileTab: (tab) => {
+        const secMap: Record<MobileTab, AppSection> = {
+          heart: 'heart',
+          inputs: 'inputs',
+          results: 'metrics',
+        };
+        set({ activeMobileTab: tab, activeSection: secMap[tab] });
+      },
 
       clearPatient: () =>
         set({

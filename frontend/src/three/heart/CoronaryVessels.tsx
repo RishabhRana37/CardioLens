@@ -268,9 +268,82 @@ export const CORONARY_PATHS = {
   },
 };
 
+export const CARDIAC_VEIN_PATHS = {
+  greatCardiacVein: [
+    [-0.07, 0.44, 0.39],
+    [0.01, 0.32, 0.51],
+    [0.05, 0.10, 0.58],
+    [0.06, -0.16, 0.59],
+    [-0.01, -0.44, 0.53],
+    [-0.11, -0.70, 0.39],
+    [-0.20, -0.90, 0.23],
+  ] as [number, number, number][],
+  veinBranches: [
+    [
+      [0.04, 0.15, 0.56],
+      [0.18, 0.08, 0.54],
+      [0.28, -0.06, 0.46],
+    ] as [number, number, number][],
+    [
+      [-0.01, -0.44, 0.53],
+      [-0.18, -0.52, 0.46],
+      [-0.26, -0.62, 0.36],
+    ] as [number, number, number][],
+  ],
+};
+
+const GreatCardiacVein: React.FC = () => {
+  const mainCurve = useMemo(() => {
+    const pts = CARDIAC_VEIN_PATHS.greatCardiacVein.map((p) => new THREE.Vector3(...p));
+    return new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+  }, []);
+
+  const mainGeo = useMemo(() => {
+    return new THREE.TubeGeometry(mainCurve, 40, 0.024, 10, false);
+  }, [mainCurve]);
+
+  const branchGeos = useMemo(() => {
+    return CARDIAC_VEIN_PATHS.veinBranches.map((b) => {
+      const pts = b.map((p) => new THREE.Vector3(...p));
+      const c = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+      return new THREE.TubeGeometry(c, 16, 0.018, 8, false);
+    });
+  }, []);
+
+  return (
+    <group>
+      <mesh geometry={mainGeo}>
+        <meshPhysicalMaterial
+          color="#1e5899"
+          roughness={0.35}
+          metalness={0.12}
+          clearcoat={0.65}
+          emissive="#0d3362"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+      {branchGeos.map((geo, idx) => (
+        <mesh key={idx} geometry={geo}>
+          <meshPhysicalMaterial
+            color="#1e5899"
+            roughness={0.35}
+            metalness={0.12}
+            clearcoat={0.65}
+            emissive="#0d3362"
+            emissiveIntensity={0.15}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+};
+
 export const CoronaryVessels: React.FC = () => {
   return (
     <group position={[0, -0.1, 0]}>
+      {/* Paired Great Cardiac Vein (Anterior Sulcus Blue Vein matching sticker) */}
+      <GreatCardiacVein />
+
       {/* Left Anterior Descending (LAD) */}
       <VesselBranch
         vesselKey="LAD"

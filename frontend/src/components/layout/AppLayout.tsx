@@ -6,6 +6,9 @@ import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
 import { ModelTrustDrawer } from '../trust/ModelTrustDrawer';
 import { OnboardingCoachMarks } from '../onboarding/OnboardingCoachMarks';
+import { HeartAnatomySection } from '../views/HeartAnatomySection';
+import { PatientInputSection } from '../views/PatientInputSection';
+import { ClinicalMetricsSection } from '../views/ClinicalMetricsSection';
 import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
 import { ClinicalDashboard } from '../dashboard/ClinicalDashboard';
@@ -13,7 +16,7 @@ import { StateDebugPanel } from '../debug/StateDebugPanel';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppLayout: React.FC = () => {
-  const { theme, activeMobileTab, init } = useAppStore();
+  const { theme, activeSection, init } = useAppStore();
 
   // Boot foundation data on app mount
   useEffect(() => {
@@ -33,72 +36,76 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent/30 selection:text-teal-200">
-      {/* Top Clinical Header */}
+      {/* Top Clinical Header with Primary Section Navigation */}
       <TopBar />
 
-      {/* Mobile/Tablet Tab Bar (Visible on < 1024px) */}
+      {/* Mobile/Tablet Bottom Tab Bar */}
       <MobileTabBar />
 
       {/* Main Console Workspace */}
-      <div className="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 lg:p-5 flex flex-col">
-        {/* Desktop 3-Zone Console Layout (>= 1024px) */}
-        <div className="hidden lg:flex flex-row items-stretch gap-4 xl:gap-5 flex-1">
-          {/* Zone 1: Patient Input & Controls */}
-          <PatientRail />
+      <main className="flex-1 max-w-[1740px] w-full mx-auto p-3 sm:p-4 lg:p-5 flex flex-col">
+        <AnimatePresence mode="wait">
+          {/* Section 1: 🫀 Dedicated Heart Anatomy & 3D Twin View */}
+          {activeSection === 'heart' && (
+            <motion.div
+              key="view-heart"
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col h-full"
+            >
+              <HeartAnatomySection />
+            </motion.div>
+          )}
 
-          {/* Zone 2: Interactive 3D Heart Viewer Stage */}
-          <main className="flex-1 flex flex-col min-h-[540px] lg:min-h-[660px]">
-            <HeartScene />
-          </main>
+          {/* Section 2: 📋 Dedicated Patient Inputs & Clinical Feature Vector View */}
+          {activeSection === 'inputs' && (
+            <motion.div
+              key="view-inputs"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col h-full"
+            >
+              <PatientInputSection />
+            </motion.div>
+          )}
 
-          {/* Zone 3: Clinical Dashboard */}
-          <ClinicalDashboard />
-        </div>
+          {/* Section 3: 📊 Dedicated Clinical Metrics & SHAP Analytics View */}
+          {activeSection === 'metrics' && (
+            <motion.div
+              key="view-metrics"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col h-full"
+            >
+              <ClinicalMetricsSection />
+            </motion.div>
+          )}
 
-        {/* Mobile / Tablet Tabbed View (< 1024px) */}
-        <div className="lg:hidden flex-1 flex flex-col">
-          <AnimatePresence mode="wait">
-            {activeMobileTab === 'heart' && (
-              <motion.div
-                key="tab-heart"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 flex flex-col min-h-[500px]"
-              >
+          {/* Optional Split Console View (For Ultra-Wide Screens) */}
+          {activeSection === 'split' && (
+            <motion.div
+              key="view-split"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="hidden lg:flex flex-row items-stretch gap-4 xl:gap-5 flex-1 h-full"
+            >
+              <PatientRail />
+              <div className="flex-1 flex flex-col min-h-[540px] lg:min-h-[660px]">
                 <HeartScene />
-              </motion.div>
-            )}
-
-            {activeMobileTab === 'inputs' && (
-              <motion.div
-                key="tab-inputs"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 flex flex-col"
-              >
-                <PatientRail />
-              </motion.div>
-            )}
-
-            {activeMobileTab === 'results' && (
-              <motion.div
-                key="tab-results"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="flex-1 flex flex-col"
-              >
-                <ClinicalDashboard />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+              </div>
+              <ClinicalDashboard />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
       {/* Persistent Disclaimer & Credits Footer */}
       <Footer />
@@ -117,6 +124,8 @@ export const AppLayout: React.FC = () => {
     </div>
   );
 };
+
+export default AppLayout;
 
 export const App = AppLayout;
 

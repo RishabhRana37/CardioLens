@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppStore, GraphicQuality } from '../../store/useAppStore';
+import { useAppStore, GraphicQuality, AppSection } from '../../store/useAppStore';
 import {
   Activity,
   Heart,
@@ -12,6 +12,9 @@ import {
   Zap,
   UserCheck,
   UserX,
+  FileText,
+  BarChart3,
+  Columns,
 } from 'lucide-react';
 
 export const TopBar: React.FC = () => {
@@ -22,9 +25,18 @@ export const TopBar: React.FC = () => {
     toggleTheme,
     patientSummary,
     patientRiskTier,
+    activeSection,
+    setActiveSection,
     openDisclaimerModal,
     openModelTrust,
   } = useAppStore();
+
+  const sectionTabs: { id: AppSection; label: string; icon: React.FC<{ className?: string }> }[] = [
+    { id: 'heart', label: '3D Heart Anatomy', icon: Heart },
+    { id: 'inputs', label: 'Patient Input', icon: FileText },
+    { id: 'metrics', label: 'Metrics & SHAP', icon: BarChart3 },
+    { id: 'split', label: 'Split View', icon: Columns },
+  ];
 
   const qualityOptions: { id: GraphicQuality; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'cinematic', label: 'Cinematic', icon: Sparkles },
@@ -64,7 +76,7 @@ export const TopBar: React.FC = () => {
             {patientSummary ? (
               <>
                 <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <span className="text-slate-200 font-medium truncate max-w-[140px] sm:max-w-[200px]">
+                <span className="text-slate-200 font-medium truncate max-w-[120px] sm:max-w-[170px]">
                   {patientSummary}
                 </span>
                 {patientRiskTier && (
@@ -90,7 +102,33 @@ export const TopBar: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Quality, Theme Toggle, Disclaimer Pill, Model Version */}
+        {/* Center: Primary Section Navigation Tabs (Decluttered Console) */}
+        <nav
+          aria-label="Primary Navigation"
+          className="hidden md:flex items-center bg-slate-900/90 p-1 rounded-xl border border-white/10 shadow-glass-sm"
+        >
+          {sectionTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeSection === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSection(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
+                  isActive
+                    ? 'bg-teal-600 text-white shadow-xs font-bold ring-1 ring-teal-400/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-teal-400'}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right: Quality, Theme Toggle, Tour, Model Trust, Disclaimer */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Quality Selector (Segmented Button) */}
           <div className="hidden lg:flex items-center bg-slate-900/90 p-0.5 rounded-lg border border-white/10 text-xs">

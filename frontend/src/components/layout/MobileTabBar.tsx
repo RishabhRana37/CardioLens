@@ -1,27 +1,27 @@
 import React from 'react';
-import { useAppStore, MobileTab } from '../../store/useAppStore';
-import { Heart, User, Activity } from 'lucide-react';
+import { useAppStore, AppSection } from '../../store/useAppStore';
+import { Heart, FileText, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const MobileTabBar: React.FC = () => {
-  const { activeMobileTab, setActiveMobileTab, predictions } = useAppStore();
+  const { activeSection, setActiveSection, predictions } = useAppStore();
 
-  const tabs: { id: MobileTab; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'heart', label: '3D Heart Stage', icon: Heart },
-    { id: 'inputs', label: 'Patient & Controls', icon: User },
-    { id: 'results', label: 'Clinical Dashboard', icon: Activity },
+  const tabs: { id: AppSection; label: string; icon: React.FC<{ className?: string }> }[] = [
+    { id: 'heart', label: '3D Heart', icon: Heart },
+    { id: 'inputs', label: 'Patient Input', icon: FileText },
+    { id: 'metrics', label: 'Metrics & SHAP', icon: BarChart3 },
   ];
 
   return (
-    <div className="lg:hidden border-b border-glass-border bg-slate-900/90 backdrop-blur-md px-3 py-1.5 z-30">
+    <div className="md:hidden border-b border-glass-border bg-slate-900/90 backdrop-blur-md px-3 py-1.5 z-30">
       <div className="flex items-center justify-around gap-1 max-w-md mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeMobileTab === tab.id;
+          const isActive = activeSection === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveMobileTab(tab.id)}
+              onClick={() => setActiveSection(tab.id)}
               className={`relative flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium transition-all ${
                 isActive ? 'text-teal-300 font-semibold' : 'text-slate-400 hover:text-slate-200'
               }`}
@@ -36,7 +36,7 @@ export const MobileTabBar: React.FC = () => {
               <span className="relative z-10 flex items-center gap-1.5">
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-teal-400' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
-                {tab.id === 'results' && predictions && (
+                {tab.id === 'metrics' && predictions && (
                   <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
                 )}
               </span>
