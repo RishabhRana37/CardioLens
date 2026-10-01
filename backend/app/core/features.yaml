@@ -1,0 +1,64 @@
+numeric: 
+  - Age
+  - Weight
+  - Height
+  - BMI
+  - BP
+  - PR
+  - FBS
+  - Cr
+  - TG
+  - LDL
+  - HDL
+  - BUN
+  - ESR
+  - HB
+  - K
+  - Na
+  - WBC
+  - Lymph
+  - Neut
+  - PLT
+  - EF-TTE
+ordinal: 
+  - Function Class
+  - Region with RWMA
+binary:  
+  - Sex
+  - DM
+  - HTN
+  - Current Smoker
+  - Ex-Smoker
+  - FH
+  - Obesity
+  - CRF
+  - CVA
+  - Airway disease
+  - Thyroid Disease
+  - CHF
+  - DLP
+  - Edema
+  - Weak Peripheral Pulse
+  - Lung rales
+  - Systolic Murmur
+  - Diastolic Murmur
+  - Typical Chest Pain
+  - Dyspnea
+  - Atypical
+  - Nonanginal CP
+  - Exertional CP
+  - LowTH Ang
+  - Q Wave
+  - ST Elevation
+  - ST Depression
+  - T inversion
+  - LVH
+  - Poor R Progression
+nominal: 
+  - Rhythm
+  - VHD
+leakage: 
+  - LAD
+  - LCX
+  - RCA
+  - Cath
