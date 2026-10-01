@@ -5,6 +5,7 @@ import { MobileTabBar } from './MobileTabBar';
 import { Footer } from './Footer';
 import { DisclaimerModal } from '../disclaimer/DisclaimerModal';
 import { ModelTrustDrawer } from '../trust/ModelTrustDrawer';
+import { OnboardingCoachMarks } from '../onboarding/OnboardingCoachMarks';
 import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
 import { ClinicalDashboard } from '../dashboard/ClinicalDashboard';
@@ -107,6 +108,9 @@ export const AppLayout: React.FC = () => {
 
       {/* Model Trust & Rigor Drawer (Req 7.4) */}
       <ModelTrustDrawer />
+
+      {/* Interactive Clinical Onboarding Coachmarks */}
+      <OnboardingCoachMarks />
 
       {/* Temporary Interactive State Debug Panel */}
       <StateDebugPanel />

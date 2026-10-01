@@ -1,10 +1,11 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, ContactShadows, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
 import { ProceduralHeart } from './heart/ProceduralHeart';
 import { CoronaryVessels } from './heart/CoronaryVessels';
+import { BloodFlowParticles } from './heart/BloodFlowParticles';
 import { CameraController } from './heart/CameraController';
 import { PostProcessingEffects } from './heart/PostProcessingEffects';
 import { ThreeErrorBoundary } from './ThreeErrorBoundary';
@@ -35,6 +36,28 @@ export const HeartScene: React.FC = () => {
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
   const activeColor = colorFor(selectedVessel || 'CAD');
   const cadProb = predictions?.CAD?.probability ?? 0.2;
+
+  // Global keyboard shortcuts for vessel isolation (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is currently typing in an input
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        return;
+      }
+
+      if (e.key === '1') selectVessel(null);
+      if (e.key === '2') selectVessel('LAD');
+      if (e.key === '3') selectVessel('LCX');
+      if (e.key === '4') selectVessel('RCA');
+      if (e.key === ' ') {
+        e.preventDefault();
+        setIsBeating((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectVessel]);
 
   return (
     <div className="relative w-full h-full min-h-[540px] lg:min-h-[660px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group">
@@ -67,8 +90,8 @@ export const HeartScene: React.FC = () => {
           {/* Beating Toggle */}
           <button
             onClick={() => setIsBeating(!isBeating)}
-            title={isBeating ? 'Pause Heartbeat' : 'Resume Heartbeat'}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md text-xs font-mono flex items-center gap-1"
+            title={isBeating ? 'Pause Heartbeat (Spacebar)' : 'Resume Heartbeat (Spacebar)'}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md text-xs font-mono flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             {isBeating ? (
               <>
@@ -86,7 +109,8 @@ export const HeartScene: React.FC = () => {
           {/* Whole Heart View / Reset */}
           <button
             onClick={() => selectVessel(null)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono transition-all backdrop-blur-md flex items-center gap-1.5 ${
+            title="Whole Heart Overview (Key: 1)"
+            className={`px-3 py-1.5 rounded-xl border text-xs font-mono transition-all backdrop-blur-md flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-teal-500 ${
               selectedVessel === null
                 ? 'bg-teal-950/90 border-teal-500/50 text-teal-300 font-semibold shadow-glow-teal'
                 : 'bg-slate-900/80 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
@@ -100,7 +124,7 @@ export const HeartScene: React.FC = () => {
           <button
             onClick={() => selectVessel(null)}
             title="Reset Orbit Camera"
-            className="p-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md"
+            className="p-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md focus-visible:ring-2 focus-visible:ring-teal-500"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -140,6 +164,7 @@ export const HeartScene: React.FC = () => {
               >
                 <ProceduralHeart isBeating={isBeating} />
                 <CoronaryVessels />
+                <BloodFlowParticles />
               </Float>
             </Suspense>
 

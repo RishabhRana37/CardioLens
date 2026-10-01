@@ -135,6 +135,19 @@ export const TopBar: React.FC = () => {
             )}
           </button>
 
+          {/* Tour / Guide Button */}
+          <button
+            onClick={() => {
+              localStorage.removeItem('cardiotwin_onboarding_dismissed');
+              window.location.reload();
+            }}
+            title="Restart Interactive Clinical Tour"
+            className="p-1.5 rounded-lg bg-slate-900/90 border border-white/10 text-slate-300 hover:text-teal-300 hover:bg-slate-800 transition-colors text-xs flex items-center gap-1"
+          >
+            <Sparkles className="w-4 h-4 text-teal-400" />
+            <span className="hidden 2xl:inline text-[11px] font-mono">Tour</span>
+          </button>
+
           {/* Model Trust Validation Modal / Drawer Trigger */}
           <button
             onClick={openModelTrust}
