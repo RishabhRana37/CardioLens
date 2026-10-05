@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { useAppStore } from '../../store/useAppStore';
 
 export const PostProcessingEffects: React.FC = () => {
-  const { quality } = useAppStore();
+  const { quality, isAngiogramMode } = useAppStore();
 
   // Performance mode bypasses all postprocessing shaders
   if (quality === 'performance') {
@@ -21,12 +21,12 @@ export const PostProcessingEffects: React.FC = () => {
     return (
       <EffectComposer multisampling={0}>
         <Bloom
-          luminanceThreshold={0.55}
+          luminanceThreshold={isAngiogramMode ? 0.42 : 0.55}
           luminanceSmoothing={0.25}
-          intensity={0.65}
+          intensity={isAngiogramMode ? 1.15 : 0.65}
           mipmapBlur
         />
-        <Vignette eskil={false} offset={0.25} darkness={0.6} />
+        <Vignette eskil={false} offset={isAngiogramMode ? 0.35 : 0.25} darkness={isAngiogramMode ? 0.75 : 0.6} />
         <SMAA />
       </EffectComposer>
     );
@@ -36,17 +36,17 @@ export const PostProcessingEffects: React.FC = () => {
   return (
     <EffectComposer multisampling={0}>
       <Bloom
-        luminanceThreshold={0.50}
+        luminanceThreshold={isAngiogramMode ? 0.38 : 0.50}
         luminanceSmoothing={0.3}
-        intensity={0.85}
+        intensity={isAngiogramMode ? 1.45 : 0.85}
         mipmapBlur
       />
       <ChromaticAberration
-        offset={new THREE.Vector2(0.0006, 0.0006)}
+        offset={isAngiogramMode ? new THREE.Vector2(0.0009, 0.0009) : new THREE.Vector2(0.0006, 0.0006)}
         radialModulation={false}
         modulationOffset={0}
       />
-      <Vignette eskil={false} offset={0.3} darkness={0.65} />
+      <Vignette eskil={false} offset={isAngiogramMode ? 0.35 : 0.3} darkness={isAngiogramMode ? 0.8 : 0.65} />
       <SMAA />
     </EffectComposer>
   );

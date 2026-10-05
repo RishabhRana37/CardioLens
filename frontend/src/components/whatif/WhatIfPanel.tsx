@@ -13,6 +13,7 @@ import {
   Activity,
   Flame,
   CheckCircle2,
+  GitCompare,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -27,6 +28,8 @@ export const WhatIfPanel: React.FC = () => {
     setFeature,
     resetWhatIf,
     isPredicting,
+    isCompareMode,
+    toggleCompareMode,
   } = useAppStore();
 
   const currentFeatures = patient || {};
@@ -185,7 +188,21 @@ export const WhatIfPanel: React.FC = () => {
       </div>
 
       {/* Quick Demo Actions & Presets */}
-      <div className="flex items-center gap-1.5 pt-1">
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <button
+          type="button"
+          onClick={toggleCompareMode}
+          className={`py-1.5 px-2.5 rounded text-[10px] font-mono font-bold border transition-all flex items-center justify-center gap-1.5 ${
+            isCompareMode
+              ? 'bg-teal-950/90 text-teal-300 border-teal-400 shadow-glow-teal ring-1 ring-teal-400/50'
+              : 'bg-slate-900/90 hover:bg-slate-800 text-slate-300 border-white/10 hover:text-white'
+          }`}
+          title="Toggle Side-by-Side Baseline vs Modified Twin Stage (Key: C)"
+        >
+          <GitCompare className="w-3 h-3 text-teal-400" />
+          <span>{isCompareMode ? 'Exit Compare' : 'Compare Twins'}</span>
+        </button>
+
         <button
           type="button"
           onClick={applyOptimalPreset}

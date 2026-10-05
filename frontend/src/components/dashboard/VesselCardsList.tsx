@@ -2,7 +2,9 @@ import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { VESSELS, VESSEL_LIST } from '../../config/vessels.config';
 import { getRiskTier } from '../../three/colorScale';
+import { AnimatedNumber } from '../../tokens/motion';
 import { ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const VesselCardsList: React.FC = () => {
   const {
@@ -34,10 +36,13 @@ export const VesselCardsList: React.FC = () => {
           const tier = getRiskTier(prob);
 
           return (
-            <button
+            <motion.button
               key={vKey}
               type="button"
               onClick={() => selectVessel(isSelected ? null : vKey)}
+              whileHover={{ scale: 1.012 }}
+              whileTap={{ scale: 0.99 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className={`w-full text-left p-3 rounded-xl border transition-all duration-200 relative overflow-hidden group cursor-pointer ${
                 isSelected
                   ? 'bg-slate-900/95 border-teal-500/60 shadow-glow-teal ring-1 ring-teal-500/40'
@@ -58,7 +63,7 @@ export const VesselCardsList: React.FC = () => {
                       <span className="font-bold text-xs text-slate-100 font-mono tracking-wide">
                         {vConfig.name}
                       </span>
-                      <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded ${tier.badgeClass}`}>
+                      <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded transition-colors duration-300 ${tier.badgeClass}`}>
                         {pred?.label || (prob >= 0.5 ? 'Stenotic' : 'Normal')}
                       </span>
                     </div>
@@ -68,14 +73,14 @@ export const VesselCardsList: React.FC = () => {
                   </div>
 
                   <div className="text-right">
-                    <span
-                      className="font-mono font-extrabold text-base tabular-nums block"
+                    <div
+                      className="font-mono font-extrabold text-base tabular-nums block transition-colors duration-200"
                       style={{ color }}
                     >
-                      {(prob * 100).toFixed(0)}%
-                    </span>
+                      <AnimatedNumber value={prob} multiplier={100} precision={0} suffix="%" />
+                    </div>
                     <span className="text-[9px] font-mono text-slate-400">
-                      {(conf * 100).toFixed(0)}% conf
+                      <AnimatedNumber value={conf} multiplier={100} precision={0} suffix="% conf" />
                     </span>
                   </div>
                 </div>
@@ -83,12 +88,14 @@ export const VesselCardsList: React.FC = () => {
                 {/* Mini Risk Progress Bar */}
                 <div className="space-y-1">
                   <div className="h-1.5 rounded-full bg-slate-900 overflow-hidden border border-white/5">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
+                    <motion.div
+                      className="h-full rounded-full"
+                      initial={false}
+                      animate={{
                         width: `${Math.max(6, Math.round(prob * 100))}%`,
                         backgroundColor: color,
                       }}
+                      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
                     />
                   </div>
 
@@ -100,7 +107,7 @@ export const VesselCardsList: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </button>
+            </motion.button>
           );
         })}
       </div>

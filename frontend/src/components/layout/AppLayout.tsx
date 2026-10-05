@@ -13,6 +13,7 @@ import { PatientRail } from '../patient/PatientRail';
 import { HeartScene } from '../../three/HeartScene';
 import { ClinicalDashboard } from '../dashboard/ClinicalDashboard';
 import { StateDebugPanel } from '../debug/StateDebugPanel';
+import { CinematicBootScreen } from '../common/CinematicBootScreen';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppLayout: React.FC = () => {
@@ -36,6 +37,9 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-slate-100 selection:bg-accent/30 selection:text-teal-200">
+      {/* Cinematic Brand Boot Screen (Animated EKG-Heart Morph & Tagline on Load) */}
+      <CinematicBootScreen />
+
       {/* Top Clinical Header with Primary Section Navigation */}
       <TopBar />
 

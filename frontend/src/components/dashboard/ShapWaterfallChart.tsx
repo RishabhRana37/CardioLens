@@ -10,11 +10,13 @@ import {
   Cell,
 } from 'recharts';
 import { useAppStore } from '../../store/useAppStore';
+import { AnimatedNumber } from '../../tokens/motion';
 import {
   BarChart2,
   Sparkles,
   RefreshCw,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const ShapWaterfallChart: React.FC = () => {
   const { explanation, selectedVessel, isExplaining } = useAppStore();
@@ -56,24 +58,35 @@ export const ShapWaterfallChart: React.FC = () => {
 
         {/* Base -> Final Annotation */}
         <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 shrink-0">
-          <span>Base: {(baseVal * 100).toFixed(0)}%</span>
+          <span>
+            Base: <AnimatedNumber value={baseVal} multiplier={100} precision={0} suffix="%" />
+          </span>
           <span>→</span>
           <span className="font-bold text-slate-100">
-            Pred: {(predVal * 100).toFixed(0)}%
+            Pred: <AnimatedNumber value={predVal} multiplier={100} precision={0} suffix="%" />
           </span>
         </div>
       </div>
 
       {/* Clinical Narrative Callout */}
-      <div className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/25 space-y-1 relative">
-        <div className="flex items-center gap-1.5 text-teal-400 text-[10px] font-mono font-semibold uppercase">
-          <Sparkles className="w-3 h-3" />
-          <span>Physiological Narrative</span>
-        </div>
-        <p className="text-xs text-slate-300 italic leading-relaxed">
-          {explanation?.narrative || 'Computing localized SHAP feature attribution...'}
-        </p>
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`narrative-${selectedVessel || 'CAD'}`}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.25 }}
+          className="p-3 rounded-xl bg-slate-950/80 border border-teal-500/25 space-y-1 relative"
+        >
+          <div className="flex items-center gap-1.5 text-teal-400 text-[10px] font-mono font-semibold uppercase">
+            <Sparkles className="w-3 h-3" />
+            <span>Physiological Narrative</span>
+          </div>
+          <p className="text-xs text-slate-300 italic leading-relaxed">
+            {explanation?.narrative || 'Computing localized SHAP feature attribution...'}
+          </p>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Diverging Bar Chart */}
       <div className="h-56 w-full pt-1">
@@ -131,7 +144,13 @@ export const ShapWaterfallChart: React.FC = () => {
               }}
             />
             <ReferenceLine x={0} stroke="rgba(255, 255, 255, 0.25)" strokeDasharray="3 3" />
-            <Bar dataKey="shap" radius={[3, 3, 3, 3]}>
+            <Bar
+              dataKey="shap"
+              radius={[3, 3, 3, 3]}
+              isAnimationActive={true}
+              animationDuration={650}
+              animationEasing="ease-out"
+            >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}

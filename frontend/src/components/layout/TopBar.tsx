@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAppStore, GraphicQuality, AppSection } from '../../store/useAppStore';
+import { CardioLogo } from '../common/CardioLogo';
 import {
-  Activity,
   Heart,
   ShieldAlert,
   ShieldCheck,
@@ -45,34 +45,17 @@ export const TopBar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-glass-border bg-slate-950/85 backdrop-blur-md px-3 sm:px-5 py-2.5 transition-colors">
+    <header className="sticky top-0 z-40 border-b border-glass-border bg-slate-950/85 backdrop-blur-xl px-3 sm:px-5 py-2.5 transition-colors">
       <div className="flex items-center justify-between gap-3">
         {/* Left: Brand Logotype & Patient Context Chip */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {/* Brand */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-glow-teal border border-teal-400/30">
-              <Activity className="w-4 h-4 text-white animate-pulse" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-base tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-teal-300 bg-clip-text text-transparent">
-                  CardioTwin
-                </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-teal-300 border border-teal-500/20">
-                  v1.0
-                </span>
-              </div>
-              <span className="hidden md:inline text-[10px] text-slate-400 font-medium">
-                Cardiac Digital Twin
-              </span>
-            </div>
-          </div>
+          {/* Distinctive Brand Logotype */}
+          <CardioLogo size="sm" showText={true} showTagline={true} />
 
           <div className="hidden sm:block h-6 w-[1px] bg-white/10" />
 
           {/* Current Patient Chip */}
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-white/10 text-xs">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-white/10 text-xs shadow-glass-sm">
             {patientSummary ? (
               <>
                 <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />

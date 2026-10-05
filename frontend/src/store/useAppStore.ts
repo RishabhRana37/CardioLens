@@ -22,9 +22,14 @@ export interface AppState {
   theme: AppTheme;
   disclaimerAcknowledged: boolean;
 
-  // Modals & Navigation
+  // Modals, Navigation & Visual Modes
   isDisclaimerModalOpen: boolean;
   isModelTrustOpen: boolean;
+  isAngiogramMode: boolean;
+  isCrossSectionOpen: boolean;
+  isCompareMode: boolean;
+  isProjectionMode: boolean;
+  cameraPreset: 'anterior' | 'posterior' | 'left' | 'right' | 'apical' | null;
   activeSection: AppSection;
   activeMobileTab: MobileTab;
 
@@ -47,6 +52,7 @@ export interface AppState {
   // Predictions & Explainability
   predictions: Record<Target, Prediction> | null;
   baselinePredictions: Record<Target, Prediction> | null; // Baseline predictions for What-If delta comparison
+  projectionPredictions: Record<Target, Prediction> | null; // Live projection predictions for horizon trajectory
   explanation: Explanation | null;
   selectedVessel: Target | null; // null = CAD / Whole Heart
   metrics: MetricsBundle | null;
@@ -64,11 +70,20 @@ export interface AppState {
   explain: (targetOverride?: Target | null, fast?: boolean) => Promise<void>;
   resetWhatIf: () => Promise<void>;
   colorFor: (target: Target) => string;
+  setProjectionMode: (active: boolean) => void;
+  setProjectionPredictions: (preds: Record<Target, Prediction> | null) => void;
 
   // UI Setting Actions
   setQuality: (quality: GraphicQuality) => void;
   setTheme: (theme: AppTheme) => void;
   toggleTheme: () => void;
+  toggleAngiogramMode: () => void;
+  setAngiogramMode: (active: boolean) => void;
+  toggleCrossSection: () => void;
+  setCrossSectionOpen: (open: boolean) => void;
+  toggleCompareMode: () => void;
+  setCompareMode: (compare: boolean) => void;
+  setCameraPreset: (preset: 'anterior' | 'posterior' | 'left' | 'right' | 'apical' | null) => void;
   setDisclaimerAcknowledged: (ack: boolean) => void;
   openDisclaimerModal: () => void;
   closeDisclaimerModal: () => void;
@@ -90,6 +105,11 @@ export const useAppStore = create<AppState>()(
       // Default Session State
       isDisclaimerModalOpen: false,
       isModelTrustOpen: false,
+      isAngiogramMode: false,
+      isCrossSectionOpen: false,
+      isCompareMode: false,
+      isProjectionMode: false,
+      cameraPreset: null,
       activeSection: 'heart',
       activeMobileTab: 'heart',
       isInitialized: false,
@@ -108,6 +128,7 @@ export const useAppStore = create<AppState>()(
 
       predictions: null,
       baselinePredictions: null,
+      projectionPredictions: null,
       explanation: null,
       selectedVessel: null,
       metrics: null,
@@ -237,7 +258,10 @@ export const useAppStore = create<AppState>()(
        * and fetches its SHAP explanation.
        */
       selectVessel: async (target: Target | null) => {
-        set({ selectedVessel: target });
+        set({
+          selectedVessel: target,
+          isCrossSectionOpen: target !== null,
+        });
         await get().explain(target, false);
       },
 
@@ -283,14 +307,30 @@ export const useAppStore = create<AppState>()(
 
       /**
        * Derived helper: Maps target prediction probability to continuous Hex risk color.
+       * Respects projectionPredictions during active trajectory scrub/animation.
        */
       colorFor: (target: Target) => {
-        const preds = get().predictions;
+        const preds =
+          get().isProjectionMode && get().projectionPredictions
+            ? get().projectionPredictions
+            : get().predictions;
         if (!preds || !preds[target]) {
           return '#0d9488'; // Default teal if no predictions yet
         }
         return riskGradient(preds[target].probability);
       },
+
+      setProjectionMode: (active) =>
+        set((state) => ({
+          isProjectionMode: active,
+          projectionPredictions: active ? state.projectionPredictions : null,
+        })),
+
+      setProjectionPredictions: (preds) =>
+        set({
+          projectionPredictions: preds,
+          isProjectionMode: Boolean(preds),
+        }),
 
       // UI Actions
       setQuality: (quality) => set({ quality }),
@@ -312,6 +352,26 @@ export const useAppStore = create<AppState>()(
         const nextTheme = get().theme === 'dark' ? 'light' : 'dark';
         get().setTheme(nextTheme);
       },
+
+      toggleAngiogramMode: () => set((state) => ({ isAngiogramMode: !state.isAngiogramMode })),
+      setAngiogramMode: (active: boolean) => set({ isAngiogramMode: active }),
+      toggleCrossSection: () => set((state) => ({ isCrossSectionOpen: !state.isCrossSectionOpen })),
+      setCrossSectionOpen: (open: boolean) => set({ isCrossSectionOpen: open }),
+      toggleCompareMode: () =>
+        set((state) => {
+          const next = !state.isCompareMode;
+          return {
+            isCompareMode: next,
+            // Keep performance sane in compare mode by dropping to balanced if currently cinematic
+            quality: next && state.quality === 'cinematic' ? 'balanced' : state.quality,
+          };
+        }),
+      setCompareMode: (compare: boolean) =>
+        set((state) => ({
+          isCompareMode: compare,
+          quality: compare && state.quality === 'cinematic' ? 'balanced' : state.quality,
+        })),
+      setCameraPreset: (preset) => set({ cameraPreset: preset }),
 
       setDisclaimerAcknowledged: (ack) =>
         set({ disclaimerAcknowledged: ack, isDisclaimerModalOpen: false }),

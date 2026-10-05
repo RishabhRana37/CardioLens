@@ -1,46 +1,63 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, ContactShadows, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppStore } from '../store/useAppStore';
-import { ProceduralHeart } from './heart/ProceduralHeart';
-import { CoronaryVessels } from './heart/CoronaryVessels';
+import { HeartModelLoader, InspectedNodeInfo, ModelMode } from './heart/HeartModelLoader';
 import { BloodFlowParticles } from './heart/BloodFlowParticles';
+import { VesselAnchoredLabels } from './heart/VesselAnchoredLabels';
+import { LumenCrossSectionOverlay } from './heart/LumenCrossSectionOverlay';
 import { CameraController } from './heart/CameraController';
 import { PostProcessingEffects } from './heart/PostProcessingEffects';
 import { ThreeErrorBoundary } from './ThreeErrorBoundary';
-import { VESSEL_LIST } from '../config/vessels.config';
+import { ModelInspectorOverlay } from './inspector/ModelInspectorOverlay';
+import { RadialRiskGauge } from './hud/RadialRiskGauge';
+import { FloatingControlDock } from './hud/FloatingControlDock';
+import { CanvasLegendAndWatermark } from './hud/CanvasLegendAndWatermark';
+import { CompareModeOverlay } from './hud/CompareModeOverlay';
+import { BrandedHeartSkeleton } from '../components/common/BrandedHeartSkeleton';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  RotateCcw,
-  Heart,
-  Play,
-  Pause,
-  ZoomIn,
-  MousePointerClick,
-  RefreshCw,
   Box,
+  RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 
 export const HeartScene: React.FC = () => {
   const [isBeating, setIsBeating] = useState<boolean>(true);
+  const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
+  const [isModelReady, setIsModelReady] = useState<boolean>(false);
+  const [modelNodes, setModelNodes] = useState<InspectedNodeInfo[]>([]);
+  const [detectedMode, setDetectedMode] = useState<ModelMode>('MODE_A');
+  const [selectedInspectorNodeId, setSelectedInspectorNodeId] = useState<string | null>(null);
 
   const {
     quality,
     predictions,
+    baselinePredictions,
     selectedVessel,
     selectVessel,
     colorFor,
     isPredicting,
+    isAngiogramMode,
+    toggleAngiogramMode,
+    isCompareMode,
+    toggleCompareMode,
   } = useAppStore();
 
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
   const activeColor = colorFor(selectedVessel || 'CAD');
-  const cadProb = predictions?.CAD?.probability ?? 0.2;
 
-  // Global keyboard shortcuts for vessel isolation (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat)
+  const handleModelLoaded = useCallback((nodes: InspectedNodeInfo[], mode: ModelMode) => {
+    setModelNodes(nodes);
+    setDetectedMode(mode);
+    setIsModelReady(true);
+  }, []);
+
+  // Global keyboard shortcuts (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat, I: Inspector, A: Angiogram, C: Compare)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is currently typing in an input
+      // Ignore if user is currently typing in an input/textarea
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         return;
       }
@@ -49,6 +66,15 @@ export const HeartScene: React.FC = () => {
       if (e.key === '2') selectVessel('LAD');
       if (e.key === '3') selectVessel('LCX');
       if (e.key === '4') selectVessel('RCA');
+      if (e.key === 'a' || e.key === 'A') {
+        toggleAngiogramMode();
+      }
+      if (e.key === 'c' || e.key === 'C') {
+        toggleCompareMode();
+      }
+      if (e.key === 'i' || e.key === 'I') {
+        setIsInspectorOpen((prev) => !prev);
+      }
       if (e.key === ' ') {
         e.preventDefault();
         setIsBeating((prev) => !prev);
@@ -57,220 +83,282 @@ export const HeartScene: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectVessel]);
+  }, [selectVessel, toggleAngiogramMode, toggleCompareMode]);
 
   return (
-    <div className="relative w-full h-full min-h-[540px] lg:min-h-[660px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group">
-      {/* Background Radial Glow Stage */}
+    <div className="relative w-full h-full min-h-[560px] lg:min-h-[680px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group select-none">
+      {/* Background Deep Near-Black Radial-Gradient Backdrop with Vignette */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-25 transition-all duration-700"
+        className="absolute inset-0 pointer-events-none transition-all duration-700"
         style={{
-          background: `radial-gradient(circle at 50% 45%, ${activeColor} 0%, transparent 65%)`,
+          background: isAngiogramMode
+            ? `radial-gradient(circle at 50% 38%, rgba(2, 6, 23, 0.95) 0%, rgba(2, 4, 10, 0.98) 60%, #010204 100%)`
+            : isCompareMode
+            ? `radial-gradient(circle at 50% 38%, rgba(13, 148, 136, 0.08) 0%, rgba(6, 9, 18, 0.96) 55%, #020408 100%)`
+            : `radial-gradient(circle at 50% 38%, rgba(15, 23, 42, 0.75) 0%, rgba(6, 9, 18, 0.95) 55%, #020408 100%)`,
         }}
       />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-30" />
+      {/* Subtle Dynamic Risk Color Halo */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20 transition-all duration-700"
+        style={{
+          background: `radial-gradient(circle at 50% 45%, ${activeColor} 0%, transparent 60%)`,
+        }}
+      />
+      {/* Stage Vignette Shadow & Grid Texture */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_40%,rgba(0,0,0,0.85)_100%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-25" />
 
-      {/* Top Floating Stage HUD */}
-      <div className="relative z-20 p-3.5 sm:p-4 flex items-start justify-between gap-2 pointer-events-none">
-        {/* Stage Status Chip */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/85 border border-white/10 backdrop-blur-md text-xs font-mono text-slate-300 shadow-glass-sm pointer-events-auto">
-          <Box className="w-3.5 h-3.5 text-teal-400" />
-          <span className="font-semibold text-slate-200">R3F 3D Stage</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-teal-300 capitalize">{quality} Mode</span>
-          {isPredicting && (
-            <span className="flex items-center gap-1 text-amber-400 pl-1">
-              <RefreshCw className="w-3 h-3 animate-spin" /> Recolor...
-            </span>
-          )}
-        </div>
-
-        {/* Action Controls Overlay */}
-        <div className="flex items-center gap-1.5 pointer-events-auto">
-          {/* Beating Toggle */}
-          <button
-            onClick={() => setIsBeating(!isBeating)}
-            title={isBeating ? 'Pause Heartbeat (Spacebar)' : 'Resume Heartbeat (Spacebar)'}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md text-xs font-mono flex items-center gap-1 focus-visible:ring-2 focus-visible:ring-teal-500"
+      {/* 3D Model Loading Skeleton Overlay */}
+      <AnimatePresence>
+        {!isModelReady && (
+          <motion.div
+            key="heart-loading-skeleton"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="absolute inset-0 z-40"
           >
-            {isBeating ? (
-              <>
-                <Pause className="w-3.5 h-3.5 text-teal-400" />
-                <span className="hidden sm:inline">68 BPM</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Paused</span>
-              </>
+            <BrandedHeartSkeleton message="Reconstructing 3D Cardiac Digital Twin..." />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Compare Mode Full-Stage Overlay */}
+      {isCompareMode && <CompareModeOverlay />}
+
+      {/* Top Cockpit HUD (Hidden during compare mode to declutter) */}
+      {!isCompareMode && (
+        <div className="relative z-20 p-3.5 sm:p-4 flex items-start justify-between gap-3 pointer-events-none">
+          {/* Top-Left: Animated Radial Risk Gauge */}
+          <RadialRiskGauge />
+
+          {/* Top-Right: Stage Status Chips & Quick Controls */}
+          <div className="flex flex-col items-end gap-2 pointer-events-auto">
+            {/* Status Chip */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/85 border border-white/10 backdrop-blur-xl text-xs font-mono text-slate-300 shadow-glass-sm">
+              <Box className="w-3.5 h-3.5 text-teal-400" />
+              <span className="font-semibold text-slate-200 hidden sm:inline">3D Stage</span>
+              <span className="text-slate-600 hidden sm:inline">|</span>
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
+                  detectedMode === 'MODE_A'
+                    ? 'bg-teal-950 text-teal-300 border border-teal-500/40'
+                    : 'bg-amber-950 text-amber-300 border border-amber-500/40'
+                }`}
+              >
+                {detectedMode}
+              </span>
+              {isPredicting && (
+                <span className="flex items-center gap-1 text-amber-400 pl-1 text-[11px]">
+                  <RefreshCw className="w-3 h-3 animate-spin" /> Recolor...
+                </span>
+              )}
+            </div>
+
+            {/* Angiogram Status Indicator Badge */}
+            {isAngiogramMode && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/90 border border-amber-500/60 text-amber-300 text-[10px] font-mono font-bold shadow-glow-amber animate-pulse">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Fluoroscopy Contrast Mode</span>
+              </div>
             )}
-          </button>
-
-          {/* Whole Heart View / Reset */}
-          <button
-            onClick={() => selectVessel(null)}
-            title="Whole Heart Overview (Key: 1)"
-            className={`px-3 py-1.5 rounded-xl border text-xs font-mono transition-all backdrop-blur-md flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-teal-500 ${
-              selectedVessel === null
-                ? 'bg-teal-950/90 border-teal-500/50 text-teal-300 font-semibold shadow-glow-teal'
-                : 'bg-slate-900/80 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Heart className="w-3.5 h-3.5 text-teal-400" />
-            <span>Whole Heart</span>
-          </button>
-
-          {/* Camera Reset */}
-          <button
-            onClick={() => selectVessel(null)}
-            title="Reset Orbit Camera"
-            className="p-1.5 rounded-xl bg-slate-900/80 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors backdrop-blur-md focus-visible:ring-2 focus-visible:ring-teal-500"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Dev-Only Model Inspector Overlay */}
+      <ModelInspectorOverlay
+        isOpen={isInspectorOpen}
+        onClose={() => setIsInspectorOpen(false)}
+        nodes={modelNodes}
+        detectedMode={detectedMode}
+        selectedNodeId={selectedInspectorNodeId}
+        onSelectNode={setSelectedInspectorNodeId}
+      />
+
+      {/* Probability-Scaled Lumen Cross-Section Cutaway Overlay */}
+      {!isCompareMode && <LumenCrossSectionOverlay />}
 
       {/* 3D WebGL Canvas Viewport */}
       <div className="absolute inset-0 z-10">
         <ThreeErrorBoundary>
           <Canvas
             dpr={dpr}
-            camera={{ position: [0, 0.4, 3.8], fov: 45 }}
+            camera={{ position: isCompareMode ? [0, 0.4, 4.8] : [0, 0.4, 3.8], fov: 45 }}
             gl={{
               antialias: true,
               alpha: true,
               powerPreference: 'high-performance',
               toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: 1.15,
+              toneMappingExposure: isAngiogramMode ? 1.25 : 1.12,
             }}
           >
-            {/* Lighting Rig */}
-            <ambientLight intensity={0.45} />
-            <directionalLight position={[4, 5, 4]} intensity={1.5} color="#ffffff" />
-            <directionalLight position={[-4, 2, -2]} intensity={0.6} color="#94a3b8" />
-            <directionalLight position={[0, -3, -4]} intensity={2.2} color="#0d9488" />
+            {/* Cinematic Lighting Rig (Dims to Cath-Lab Dark Fluoroscopy in Angiogram mode) */}
+            <ambientLight intensity={isAngiogramMode ? 0.18 : 0.45} />
 
-            {/* Subtle Studio Environment */}
-            <Environment preset="city" />
+            {/* 1. Key Light */}
+            <directionalLight
+              position={[4.2, 4.8, 3.8]}
+              intensity={isAngiogramMode ? 0.6 : 2.2}
+              color="#fff8f5"
+            />
 
-            {/* Suspended Heart Mesh & Interactive Vessels */}
+            {/* 2. Cool Teal Fill Light */}
+            <directionalLight
+              position={[-4.5, 2.2, 2.0]}
+              intensity={isAngiogramMode ? 0.3 : 1.1}
+              color="#0ea5e9"
+            />
+
+            {/* 3. Rim / Back Light (Luminous Edge Silhouette for Smoky Glass Heart) */}
+            <directionalLight
+              position={[0, 4.2, -4.8]}
+              intensity={isAngiogramMode ? 2.4 : 2.8}
+              color="#38bdf8"
+            />
+
+            {/* 4. Inferior Fill Light */}
+            <directionalLight
+              position={[0, -3.8, -2.0]}
+              intensity={isAngiogramMode ? 0.3 : 1.2}
+              color="#0d9488"
+            />
+
+            {/* 5. Fluoroscopy Beam Spotlight */}
+            <spotLight
+              position={[0, 4.8, 0.2]}
+              target-position={[0, 0, 0]}
+              angle={0.42}
+              penumbra={0.88}
+              intensity={isAngiogramMode ? 3.8 : 2.5}
+              color={isAngiogramMode ? '#38bdf8' : '#f8fafc'}
+              distance={8}
+            />
+
+            {/* Specular Glint Center Point */}
+            <pointLight
+              position={[0, 1.2, 3.0]}
+              intensity={isAngiogramMode ? 0.4 : 0.7}
+              color="#ffffff"
+              distance={7}
+            />
+
+            {/* Soft Dark Studio Environment */}
+            <Environment preset="night" environmentIntensity={isAngiogramMode ? 0.25 : 0.5} />
+
+            {/* Suspended Heart Mesh(es) */}
             <Suspense fallback={null}>
-              <Float
-                speed={isBeating ? 1.2 : 0}
-                rotationIntensity={0.15}
-                floatIntensity={0.2}
-                floatingRange={[-0.05, 0.05]}
-              >
-                <ProceduralHeart isBeating={isBeating} />
-                <CoronaryVessels />
-                <BloodFlowParticles />
-              </Float>
+              {isCompareMode ? (
+                /* Dual Synchronized Hearts: Left = Baseline, Right = Modified */
+                <group name="CompareModeDualHearts">
+                  {/* Left Heart (Baseline Snapshot) */}
+                  <group position={[-1.75, 0, 0]}>
+                    <Float
+                      speed={isBeating ? 1.0 : 0}
+                      rotationIntensity={0.08}
+                      floatIntensity={0.12}
+                      floatingRange={[-0.03, 0.03]}
+                    >
+                      <HeartModelLoader
+                        isBeating={isBeating}
+                        predictionsOverride={baselinePredictions}
+                        onModelLoaded={handleModelLoaded}
+                      />
+                      <BloodFlowParticles />
+                    </Float>
+                  </group>
+
+                  {/* Right Heart (Modified What-If Twin) */}
+                  <group position={[1.75, 0, 0]}>
+                    <Float
+                      speed={isBeating ? 1.0 : 0}
+                      rotationIntensity={0.08}
+                      floatIntensity={0.12}
+                      floatingRange={[-0.03, 0.03]}
+                    >
+                      <HeartModelLoader
+                        isBeating={isBeating}
+                        predictionsOverride={predictions}
+                      />
+                      <BloodFlowParticles />
+                      <VesselAnchoredLabels />
+                    </Float>
+                  </group>
+                </group>
+              ) : (
+                /* Standard Single Hero Heart View */
+                <Float
+                  speed={isBeating ? 1.0 : 0}
+                  rotationIntensity={0.1}
+                  floatIntensity={0.15}
+                  floatingRange={[-0.04, 0.04]}
+                >
+                  <HeartModelLoader
+                    isBeating={isBeating}
+                    selectedNodeId={selectedInspectorNodeId}
+                    onModelLoaded={handleModelLoaded}
+                  />
+                  <BloodFlowParticles />
+                  <VesselAnchoredLabels />
+                </Float>
+              )}
             </Suspense>
 
-            {/* Ground Contact Shadow (Bypassed in performance mode) */}
+            {/* Ground Contact Shadows */}
             {quality !== 'performance' && (
-              <ContactShadows
-                position={[0, -1.35, 0]}
-                opacity={0.55}
-                scale={5.5}
-                blur={2.4}
-                far={4}
-                color="#000000"
-              />
+              <>
+                {isCompareMode ? (
+                  <>
+                    <ContactShadows
+                      position={[-1.75, -1.35, 0]}
+                      opacity={isAngiogramMode ? 0.4 : 0.6}
+                      scale={4.8}
+                      blur={2.2}
+                      far={4.0}
+                      color="#000000"
+                    />
+                    <ContactShadows
+                      position={[1.75, -1.35, 0]}
+                      opacity={isAngiogramMode ? 0.4 : 0.6}
+                      scale={4.8}
+                      blur={2.2}
+                      far={4.0}
+                      color="#000000"
+                    />
+                  </>
+                ) : (
+                  <ContactShadows
+                    position={[0, -1.35, 0]}
+                    opacity={isAngiogramMode ? 0.45 : 0.65}
+                    scale={5.8}
+                    blur={2.5}
+                    far={4.2}
+                    color="#000000"
+                  />
+                )}
+              </>
             )}
 
             {/* Orbit Camera Controller */}
             <CameraController />
 
-            {/* Cinematic / Balanced Postprocessing */}
+            {/* Postprocessing (Fluoroscopy Bloom & Vignette) */}
             <PostProcessingEffects />
           </Canvas>
         </ThreeErrorBoundary>
       </div>
 
-      {/* Floating Center Quick Vessel Selector Pills */}
-      <div className="relative z-20 px-4 py-2 flex items-center justify-center pointer-events-none mt-auto">
-        <div className="flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-slate-950/80 border border-white/10 backdrop-blur-xl shadow-glass-md pointer-events-auto">
-          {/* Whole Heart CAD Indicator */}
-          <button
-            onClick={() => selectVessel(null)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all duration-200 ${
-              selectedVessel === null
-                ? 'bg-slate-900 border-teal-500/50 text-teal-300 font-bold shadow-glow-teal ring-1 ring-teal-500/30'
-                : 'bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200 hover:border-white/20'
-            }`}
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-colors duration-300"
-              style={{ backgroundColor: colorFor('CAD') }}
-            />
-            <span>CAD</span>
-            <span className="text-[11px] tabular-nums font-semibold" style={{ color: colorFor('CAD') }}>
-              {(cadProb * 100).toFixed(0)}%
-            </span>
-          </button>
+      {/* Bottom Floating Command & Scrubber Dock */}
+      <FloatingControlDock
+        isBeating={isBeating}
+        onToggleBeating={() => setIsBeating((prev) => !prev)}
+        isInspectorOpen={isInspectorOpen}
+        onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
+      />
 
-          <div className="h-4 w-[1px] bg-white/10" />
-
-          {/* Three Coronary Artery Branches */}
-          {VESSEL_LIST.map((vKey) => {
-            const isSelected = selectedVessel === vKey;
-            const prob = predictions?.[vKey]?.probability ?? 0.2;
-            const color = colorFor(vKey);
-
-            return (
-              <button
-                key={vKey}
-                onClick={() => selectVessel(vKey)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all duration-200 ${
-                  isSelected
-                    ? 'bg-slate-900 border-teal-500/60 text-white font-bold shadow-glow-teal scale-105 ring-1 ring-teal-500/40'
-                    : 'bg-slate-950/60 border-white/5 text-slate-400 hover:text-slate-200 hover:border-white/20'
-                }`}
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-colors duration-300"
-                  style={{ backgroundColor: color }}
-                />
-                <span>{vKey}</span>
-                <span className="text-[11px] tabular-nums font-semibold" style={{ color }}>
-                  {(prob * 100).toFixed(0)}%
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Bottom HUD Legend & Persistent Canvas Disclaimer */}
-      <div className="relative z-20 flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 sm:p-4 border-t border-white/10 bg-slate-950/70 backdrop-blur-md pointer-events-none">
-        {/* Continuous Risk Color Spectrum Legend */}
-        <div className="w-full sm:w-64 space-y-1 pointer-events-auto">
-          <div className="flex justify-between text-[10px] font-mono text-slate-400">
-            <span className="text-risk-low font-semibold">0.00 Normal</span>
-            <span className="text-risk-moderate font-semibold">0.50 Borderline</span>
-            <span className="text-risk-high font-semibold">1.00 Stenotic</span>
-          </div>
-          <div className="h-2 rounded-full bg-gradient-to-r from-risk-low via-risk-moderate to-risk-high shadow-inner border border-white/10" />
-        </div>
-
-        {/* Interaction Guide */}
-        <div className="flex items-center gap-3 text-[11px] text-slate-400 font-mono pointer-events-auto">
-          <span className="flex items-center gap-1">
-            <MousePointerClick className="w-3.5 h-3.5 text-teal-400" /> Click artery to isolate
-          </span>
-          <span>·</span>
-          <span className="flex items-center gap-1">
-            <ZoomIn className="w-3.5 h-3.5 text-teal-400" /> Orbit & zoom
-          </span>
-        </div>
-
-        {/* Canvas Disclaimer Watermark */}
-        <div className="text-[10px] font-mono text-slate-400 pointer-events-auto hidden xl:block">
-          ⚠ Educational & Decision Support Only
-        </div>
-      </div>
+      {/* Bottom HUD Legend & Persistent Disclaimer Watermark */}
+      <CanvasLegendAndWatermark />
     </div>
   );
 };

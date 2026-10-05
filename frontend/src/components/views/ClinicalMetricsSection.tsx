@@ -8,6 +8,9 @@ import { MetricsTable } from '../trust/MetricsTable';
 import { RocCurveChart } from '../trust/RocCurveChart';
 import { CalibrationCurveChart } from '../trust/CalibrationCurveChart';
 import { ConfusionMatrixCard } from '../trust/ConfusionMatrixCard';
+import { ProjectionPanel } from '../projection/ProjectionPanel';
+import { ClinicalSummaryCard } from '../dashboard/ClinicalSummaryCard';
+import { CohortContextView } from '../dashboard/CohortContextView';
 import { GlassPanel } from '../common/GlassPanel';
 import { Target } from '../../config/vessels.config';
 import {
@@ -57,7 +60,18 @@ export const ClinicalMetricsSection: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. MIDDLE ROW: SHAP Waterfall & Feature Attributions */}
+      {/* 2. PLAIN-LANGUAGE CLINICAL SUMMARY (Deterministic ML + SHAP grounded) */}
+      <ClinicalSummaryCard />
+
+      {/* 3. COHORT CONTEXT & POPULATION BENCHMARKING */}
+      <CohortContextView />
+
+      {/* 4. PROJECTION HORIZON: 5-Year Longitudinal Trajectory Simulator */}
+      <GlassPanel variant="command">
+        <ProjectionPanel />
+      </GlassPanel>
+
+      {/* 5. MIDDLE ROW: SHAP Waterfall & Feature Attributions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* SHAP Waterfall Diverging Chart */}
         <div className="lg:col-span-7">
