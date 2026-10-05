@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { useAppStore } from '../../store/useAppStore';
 import { VESSELS, VESSEL_LIST, VesselKey } from '../../config/vessels.config';
-import { riskGradient, getRiskTier } from '../colorScale';
+import { riskGradient } from '../colorScale';
 
 export const VesselAnchoredLabels: React.FC = () => {
   const { predictions, selectedVessel, selectVessel, isAngiogramMode } = useAppStore();
@@ -14,7 +14,7 @@ export const VesselAnchoredLabels: React.FC = () => {
     return camera.position.length();
   }, [camera.position.x, camera.position.y, camera.position.z]);
 
-  const isZoomedOut = cameraDistance > 5.2;
+  const isZoomedOut = cameraDistance > 4.6;
 
   return (
     <group name="vessel_anchored_labels_group">
@@ -23,42 +23,26 @@ export const VesselAnchoredLabels: React.FC = () => {
         const pred = predictions?.[vKey];
         const prob = pred?.probability ?? 0.22;
         const color = riskGradient(prob);
-        const { tier } = getRiskTier(prob);
         const isSelected = selectedVessel === vKey;
-        const isHighRisk = prob >= 0.67;
 
-        // Custom leader line offset vector for clean positioning away from heart surface
-        // LAD goes up-right, LCX goes up-left, RCA goes down-right
+        // Custom leader line offset vectors positioning labels neatly outside the heart silhouette
+        // LAD goes right-lateral anterior, LCX goes upper-left lateral, RCA goes lower-right lateral
         const labelOffset: [number, number, number] =
           vKey === 'LAD'
-            ? [0.18, 0.22, 0.08]
+            ? [0.28, 0.12, 0.16]
             : vKey === 'LCX'
-            ? [-0.22, 0.18, 0.06]
-            : [0.22, -0.16, 0.06];
+            ? [-0.32, 0.20, 0.05]
+            : [0.30, -0.20, 0.10];
 
         const anchorPos = vConfig.lesionAnchor;
 
         return (
           <group key={vKey} position={anchorPos}>
-            {/* 3D Pulsing Anchor Point on the Artery Surface */}
-            <mesh position={[0, 0, 0]}>
-              <sphereGeometry args={[0.024, 16, 16]} />
-              <meshBasicMaterial color={color} />
-            </mesh>
-
-            {/* Glowing Anchor Halo for High Risk */}
-            {isHighRisk && (
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[0.045, 16, 16]} />
-                <meshBasicMaterial color={color} transparent opacity={0.35} />
-              </mesh>
-            )}
-
-            {/* Drei Anchored HTML Label Card with Occlusion */}
+            {/* Drei Anchored HTML Label Card with Occlusion Culling */}
             <Html
               position={labelOffset}
               center
-              distanceFactor={6.8}
+              distanceFactor={6.5}
               occlude="blending"
               className="pointer-events-auto select-none"
             >
@@ -71,56 +55,55 @@ export const VesselAnchoredLabels: React.FC = () => {
                   isSelected ? 'scale-110 z-40' : 'hover:scale-105 z-20'
                 }`}
               >
-                {/* SVG Connecting Leader Line to Artery Anchor [0,0,0] */}
+                {/* Clean SVG Connecting Leader Line to Artery Anchor [0,0,0] */}
                 <svg
-                  className="absolute pointer-events-none overflow-visible"
+                  className="absolute pointer-events-none overflow-visible transition-opacity duration-200"
                   style={{
-                    left: vKey === 'LCX' ? '100%' : '-32px',
-                    top: vKey === 'RCA' ? '-24px' : '50%',
-                    width: '42px',
-                    height: '36px',
+                    left: vKey === 'LCX' ? '100%' : '-26px',
+                    top: vKey === 'RCA' ? '-18px' : '50%',
+                    width: '32px',
+                    height: '28px',
+                    opacity: isSelected ? 0.9 : 0.6,
                   }}
                 >
                   <path
                     d={
                       vKey === 'LCX'
-                        ? 'M 0 16 L 24 16 L 36 32'
+                        ? 'M 0 14 L 18 14 L 28 24'
                         : vKey === 'RCA'
-                        ? 'M 32 32 L 16 32 L 0 8'
-                        : 'M 36 18 L 14 18 L 0 32'
+                        ? 'M 26 24 L 14 24 L 0 6'
+                        : 'M 26 14 L 12 14 L 0 24'
                     }
                     fill="none"
                     stroke={isSelected ? '#38bdf8' : isAngiogramMode ? '#fbbf24' : color}
-                    strokeWidth={isSelected ? '2' : '1.25'}
+                    strokeWidth={isSelected ? '1.75' : '1.2'}
                     strokeDasharray={isSelected ? 'none' : '2,2'}
-                    opacity={isSelected ? 0.95 : 0.7}
                   />
                   <circle
-                    cx={vKey === 'LCX' ? '36' : '0'}
-                    cy={vKey === 'RCA' ? '8' : '32'}
-                    r={isSelected ? '3' : '2'}
+                    cx={vKey === 'LCX' ? '28' : '0'}
+                    cy={vKey === 'RCA' ? '6' : '24'}
+                    r={isSelected ? '2.5' : '1.75'}
                     fill={color}
                   />
                 </svg>
 
-                {/* Collapsed View (when zoomed out) */}
-                {isZoomedOut ? (
+                {/* Collapsed Minimal Dot (when zoomed out and not selected/hovered) */}
+                {isZoomedOut && !isSelected ? (
                   <div
-                    className={`flex items-center justify-center w-6 h-6 rounded-full border shadow-lg backdrop-blur-md transition-all ${
-                      isSelected
-                        ? 'bg-slate-900 border-teal-400 text-white shadow-glow-teal ring-2 ring-teal-400/50'
-                        : 'bg-slate-950/80 border-white/20 text-slate-200 hover:border-white/40'
-                    }`}
-                    style={{ borderColor: isSelected ? undefined : color }}
+                    className="flex items-center justify-center w-6 h-6 rounded-full border shadow-lg backdrop-blur-md transition-all duration-150 bg-slate-950/85 hover:scale-110 hover:border-white/60"
+                    style={{ borderColor: color }}
+                    title={`${vKey}: ${(prob * 100).toFixed(0)}%`}
                   >
-                    <span className="text-[9px] font-bold">{vKey}</span>
+                    <span className="text-[9px] font-bold" style={{ color }}>
+                      {vKey}
+                    </span>
                   </div>
                 ) : (
-                  /* Expanded Glassmorphic Command Label Card */
+                  /* Expanded Sleek Glassmorphic Label Card */
                   <div
-                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border backdrop-blur-xl shadow-glass-md transition-all duration-200 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border backdrop-blur-xl shadow-glass-md transition-all duration-200 ${
                       isSelected
-                        ? 'bg-slate-900/95 border-teal-400/80 text-white shadow-glow-teal ring-1 ring-teal-400/40'
+                        ? 'bg-slate-900/95 border-teal-400 text-white shadow-glow-teal ring-1 ring-teal-400/40'
                         : isAngiogramMode
                         ? 'bg-slate-950/90 border-amber-500/40 text-slate-200 hover:border-amber-400/70 hover:bg-slate-900/95'
                         : 'bg-slate-950/85 border-white/15 text-slate-200 hover:border-white/35 hover:bg-slate-900/90'
@@ -128,39 +111,26 @@ export const VesselAnchoredLabels: React.FC = () => {
                   >
                     {/* Vessel Indicator Dot */}
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover/label:scale-125"
+                      className="w-2 h-2 rounded-full shrink-0 shadow-sm transition-transform group-hover/label:scale-125"
                       style={{
                         backgroundColor: color,
-                        boxShadow: `0 0 8px ${color}88`,
+                        boxShadow: `0 0 6px ${color}99`,
                       }}
                     />
 
                     {/* Vessel Symbol */}
-                    <span className="text-xs font-bold tracking-wide text-slate-100">
+                    <span className="text-[11px] font-bold tracking-wide text-slate-100">
                       {vKey}
                     </span>
 
-                    <span className="text-slate-600 text-[10px]">|</span>
+                    <span className="text-slate-600 text-[10px]">·</span>
 
                     {/* Probability Percentage */}
                     <span
-                      className="text-xs font-bold tabular-nums"
+                      className="text-[11px] font-bold tabular-nums"
                       style={{ color }}
                     >
                       {(prob * 100).toFixed(0)}%
-                    </span>
-
-                    {/* Compact Clinical Badge */}
-                    <span
-                      className={`px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-tight border uppercase ${
-                        tier === 'high'
-                          ? 'bg-rose-950/80 text-rose-300 border-rose-600/50'
-                          : tier === 'moderate'
-                          ? 'bg-amber-950/80 text-amber-300 border-amber-600/50'
-                          : 'bg-emerald-950/80 text-emerald-300 border-emerald-600/50'
-                      }`}
-                    >
-                      {tier === 'high' ? 'Severe' : tier === 'moderate' ? 'Mod' : 'Low'}
                     </span>
                   </div>
                 )}

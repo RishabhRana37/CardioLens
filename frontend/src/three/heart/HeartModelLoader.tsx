@@ -1,11 +1,10 @@
 import React, { useMemo, useEffect, useState, useRef } from 'react';
-import { useGLTF, Html } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAppStore } from '../../store/useAppStore';
 import { ProceduralHeart } from './ProceduralHeart';
 import { CoronaryVessels } from './CoronaryVessels';
-import { StenosisPlaqueMarker } from './StenosisPlaqueMarker';
 import { getOrganicMuscleTextures } from './muscleTexture';
 import {
   VESSELS,
@@ -14,7 +13,7 @@ import {
   registerVesselObject,
 } from '../../config/vessels.config';
 import { Prediction } from '../../api/types';
-import { riskColor3, riskGradient, getRiskTier } from '../colorScale';
+import { riskColor3 } from '../colorScale';
 
 export interface InspectedNodeInfo {
   id: string;
@@ -600,13 +599,6 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
     );
   }
 
-  // Active vessel tooltip info
-  const activeTooltipVessel = hoveredVessel || (selectedVessel as VesselKey | null);
-  const activeVesselConfig = activeTooltipVessel ? VESSELS[activeTooltipVessel] : null;
-  const activePred = activeTooltipVessel ? effectivePredictions?.[activeTooltipVessel] : null;
-  const activeProb = activePred?.probability ?? 0.25;
-  const activeTier = getRiskTier(activeProb);
-
   return (
     <group ref={containerRef} name="AnatomicalHeartContainer">
       {/* 3D Scene Mesh with Raycast Handlers */}
@@ -620,62 +612,10 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
       {/* HIGH-CONTRAST 3D CORONARY ARTERY VASCULAR TREE (LAD, LCX, RCA) */}
       <CoronaryVessels predictionsOverride={effectivePredictions} />
 
-      {/* STENOSIS LESION PLAQUE MARKERS & PULSING CONSTRICTION RINGS */}
-      <group name="StenosisPlaqueMarkersGroup">
-        <StenosisPlaqueMarker vesselKey="LAD" />
-        <StenosisPlaqueMarker vesselKey="LCX" />
-        <StenosisPlaqueMarker vesselKey="RCA" />
-      </group>
-
       {/* Virtual Target Groups for Registry */}
       <group ref={ladGroupRef} position={vesselCentroids.LAD} name="Target_LAD" />
       <group ref={lcxGroupRef} position={vesselCentroids.LCX} name="Target_LCX" />
       <group ref={rcaGroupRef} position={vesselCentroids.RCA} name="Target_RCA" />
-
-      {/* Floating 3D Tooltip for Hovered / Selected Vessel in MODE_A */}
-      {detectedMode === 'MODE_A' && activeTooltipVessel && activeVesselConfig && (
-        <Html
-          position={vesselCentroids[activeTooltipVessel]}
-          distanceFactor={8}
-          center
-          pointerEvents="none"
-        >
-          <div className="rounded-xl bg-slate-950/95 border border-white/20 p-2.5 shadow-2xl backdrop-blur-xl text-slate-100 font-sans min-w-[190px] space-y-1.5 pointer-events-none select-none animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
-              <span className="font-bold text-xs text-slate-100 flex items-center gap-1.5 font-mono">
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
-                  style={{ backgroundColor: riskGradient(activeProb) }}
-                />
-                {activeVesselConfig.name} Artery
-              </span>
-              <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.2 rounded ${activeTier.badgeClass}`}>
-                {(activeProb * 100).toFixed(0)}%
-              </span>
-            </div>
-
-            <p className="text-[11px] text-slate-300 font-medium">
-              {activeVesselConfig.label}
-            </p>
-
-            <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
-              <span>Status:</span>
-              <span className="text-slate-200 font-semibold">{activePred?.label || 'Calculating'}</span>
-            </div>
-
-            {activeProb > 0.33 && (
-              <div className="flex items-center justify-between text-[10px] text-amber-400 font-mono pt-0.5 border-t border-white/5">
-                <span>Stenosis:</span>
-                <span className="font-bold">{(activeProb * 100).toFixed(0)}% Occlusion</span>
-              </div>
-            )}
-
-            <p className="text-[9px] text-teal-300/90 italic border-t border-white/5 pt-1">
-              Click to isolate & inspect SHAP drivers
-            </p>
-          </div>
-        </Html>
-      )}
     </group>
   );
 };

@@ -301,14 +301,21 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
         </mesh>
       )}
 
-      {/* Floating Interactive 3D Tooltip */}
-      {(isHovered || isSelected) && (
-        <Html position={tooltipPosition} distanceFactor={8} center pointerEvents="none">
-          <div className="rounded-xl bg-slate-950/95 border border-white/20 p-2.5 shadow-2xl backdrop-blur-xl text-slate-100 font-sans min-w-[190px] space-y-1.5 pointer-events-none select-none animate-in fade-in zoom-in-95 duration-150">
+      {/* Floating Interactive 3D Tooltip (Hover-Only, Occlusion Aware) */}
+      {isHovered && (
+        <Html
+          position={tooltipPosition}
+          distanceFactor={7.5}
+          center
+          occlude="blending"
+          pointerEvents="none"
+          className="pointer-events-none select-none transition-opacity duration-200"
+        >
+          <div className="rounded-xl bg-slate-950/95 border border-white/20 p-2.5 shadow-2xl backdrop-blur-xl text-slate-100 font-sans max-w-[210px] space-y-1.5 pointer-events-none select-none animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
               <span className="font-bold text-xs text-slate-100 flex items-center gap-1.5 font-mono">
                 <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                  className="w-2 h-2 rounded-full shrink-0 shadow-sm"
                   style={{ backgroundColor: riskGradient(probability) }}
                 />
                 {targetConfig.name} Artery
@@ -318,7 +325,7 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-300 font-medium">
+            <p className="text-[10px] text-slate-300 font-medium leading-tight">
               {targetConfig.label}
             </p>
 
