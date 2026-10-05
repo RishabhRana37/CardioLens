@@ -617,26 +617,20 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
         onPointerOut={handlePointerOut}
       />
 
-      {/* MODE_A: Stenosis Plaque Markers placed at lesion sites */}
-      {detectedMode === 'MODE_A' && (
-        <group name="StenosisPlaqueMarkersGroup">
-          <StenosisPlaqueMarker vesselKey="LAD" />
-          <StenosisPlaqueMarker vesselKey="LCX" />
-          <StenosisPlaqueMarker vesselKey="RCA" />
-        </group>
-      )}
+      {/* HIGH-CONTRAST 3D CORONARY ARTERY VASCULAR TREE (LAD, LCX, RCA) */}
+      <CoronaryVessels predictionsOverride={effectivePredictions} />
 
-      {/* MODE_B: Overlay branching tube vessels if model is surface-only */}
-      {detectedMode === 'MODE_B' && <CoronaryVessels />}
+      {/* STENOSIS LESION PLAQUE MARKERS & PULSING CONSTRICTION RINGS */}
+      <group name="StenosisPlaqueMarkersGroup">
+        <StenosisPlaqueMarker vesselKey="LAD" />
+        <StenosisPlaqueMarker vesselKey="LCX" />
+        <StenosisPlaqueMarker vesselKey="RCA" />
+      </group>
 
-      {/* Virtual Target Groups for Registry in MODE_A */}
-      {detectedMode === 'MODE_A' && (
-        <>
-          <group ref={ladGroupRef} position={vesselCentroids.LAD} name="Target_LAD" />
-          <group ref={lcxGroupRef} position={vesselCentroids.LCX} name="Target_LCX" />
-          <group ref={rcaGroupRef} position={vesselCentroids.RCA} name="Target_RCA" />
-        </>
-      )}
+      {/* Virtual Target Groups for Registry */}
+      <group ref={ladGroupRef} position={vesselCentroids.LAD} name="Target_LAD" />
+      <group ref={lcxGroupRef} position={vesselCentroids.LCX} name="Target_LCX" />
+      <group ref={rcaGroupRef} position={vesselCentroids.RCA} name="Target_RCA" />
 
       {/* Floating 3D Tooltip for Hovered / Selected Vessel in MODE_A */}
       {detectedMode === 'MODE_A' && activeTooltipVessel && activeVesselConfig && (

@@ -3,7 +3,8 @@ import { useFrame, ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAppStore } from '../../store/useAppStore';
-import { VESSELS, VesselKey, registerVesselObject } from '../../config/vessels.config';
+import { VESSELS, VesselKey, Target, registerVesselObject } from '../../config/vessels.config';
+import { Prediction } from '../../api/types';
 import { VESSEL_ANCHORS } from '../../config/vessels.anchors';
 import { riskColor3, riskGradient, getRiskTier } from '../colorScale';
 
@@ -102,26 +103,39 @@ function createStenoticTubeGeometry(
 
 interface VesselBranchProps {
   vesselKey: VesselKey;
+  predictionsOverride?: Record<Target, Prediction> | null;
 }
 
-export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
+export const VesselBranch: React.FC<VesselBranchProps> = ({
+  vesselKey,
+  predictionsOverride = null,
+}) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.MeshStandardMaterial>(null);
+  const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
 
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
   const {
     predictions,
+    projectionPredictions,
+    isProjectionMode,
     selectedVessel,
     selectVessel,
     quality,
+    isAngiogramMode,
   } = useAppStore();
 
   const isSelected = selectedVessel === vesselKey;
+  const isWholeHeart = selectedVessel === null;
   const targetConfig = VESSELS[vesselKey];
   const anchorConfig = VESSEL_ANCHORS[vesselKey];
-  const pred = predictions?.[vesselKey];
+
+  const effectivePreds =
+    predictionsOverride ||
+    (isProjectionMode && projectionPredictions ? projectionPredictions : predictions);
+
+  const pred = effectivePreds?.[vesselKey];
   const probability = pred?.probability ?? 0.25;
 
   // Register in global vessel registry
@@ -142,7 +156,7 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
 
   // Stenotic constricted tube geometry dynamically adapting to probability
   const mainGeometry = useMemo(() => {
-    return createStenoticTubeGeometry(mainCurve, 48, anchorConfig.radius, 12, probability);
+    return createStenoticTubeGeometry(mainCurve, 56, anchorConfig.radius, 14, probability);
   }, [mainCurve, anchorConfig.radius, probability]);
 
   // Build side diagonal / marginal branch geometries
@@ -150,7 +164,7 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
     return anchorConfig.branches.map((bPoints) => {
       const v3 = bPoints.map((p) => new THREE.Vector3(...p));
       const c = new THREE.CatmullRomCurve3(v3, false, 'centripetal');
-      return new THREE.TubeGeometry(c, 24, anchorConfig.radius * 0.7, 8, false);
+      return new THREE.TubeGeometry(c, 28, anchorConfig.radius * 0.68, 10, false);
     });
   }, [anchorConfig.branches, anchorConfig.radius]);
 
@@ -163,38 +177,48 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
   useFrame((state, delta) => {
     if (!materialRef.current) return;
 
-    // Read target risk color
+    // Read continuous target risk color (green -> amber -> red)
     const rgb = riskColor3(probability);
     targetColor.current.setRGB(rgb.r, rgb.g, rgb.b);
     targetEmissive.current.setRGB(rgb.r, rgb.g, rgb.b);
 
-    // Smooth LERP transition (~500ms)
-    const lerpSpeed = delta * 4.5;
+    // Smooth LERP transition (~400ms)
+    const lerpSpeed = delta * 5.0;
     currentColor.current.lerp(targetColor.current, lerpSpeed);
     currentEmissive.current.lerp(targetEmissive.current, lerpSpeed);
 
     materialRef.current.color.copy(currentColor.current);
     materialRef.current.emissive.copy(currentEmissive.current);
 
-    // High risk / Hover / Selected Emissive Intensity Modulation
-    const baseIntensity = probability > 0.66 ? 1.8 : probability > 0.33 ? 0.9 : 0.4;
-    let finalIntensity = baseIntensity;
+    // Dynamic Emissive Intensity Calculation
+    // In Angiogram Mode: intense fluoroscopic glow (2.8 - 4.5)
+    // In Whole-Heart (CAD overview): all 3 vessels glow brightly (1.4 - 2.2)
+    // When a single vessel is selected: selected vessel is boosted (+1.0), others stay visible at ~1.0
+    let intensity: number;
 
-    if (isSelected) {
-      finalIntensity += 0.8;
+    if (isAngiogramMode) {
+      intensity = 2.8 + probability * 1.4;
+    } else if (isWholeHeart) {
+      intensity = probability > 0.66 ? 2.0 : probability > 0.33 ? 1.5 : 1.2;
+    } else if (isSelected) {
+      intensity = 2.4 + probability * 0.8;
+    } else {
+      // Unselected vessel in single-vessel inspection mode
+      intensity = 0.9;
     }
+
     if (isHovered) {
-      finalIntensity += 0.6;
+      intensity += 0.6;
     }
 
-    // High-risk vessel soft pulse
+    // High-risk vessel soft organic rhythmic pulse
     if (probability > 0.66 && quality !== 'performance') {
       const time = state.clock.getElapsedTime();
-      const pulse = Math.sin(time * 3.5) * 0.45 + 0.45;
-      finalIntensity += pulse;
+      const pulse = Math.sin(time * 4.0) * 0.4 + 0.4;
+      intensity += pulse;
     }
 
-    materialRef.current.emissiveIntensity = finalIntensity;
+    materialRef.current.emissiveIntensity = intensity;
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -223,8 +247,8 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
   const riskTier = getRiskTier(probability);
 
   return (
-    <group ref={groupRef}>
-      {/* Main Artery Tube Mesh with Narrowing */}
+    <group ref={groupRef} name={`CoronaryBranch_${vesselKey}`}>
+      {/* Main Artery Tube Mesh with Stenotic Pinch */}
       <mesh
         ref={meshRef}
         geometry={mainGeometry}
@@ -232,13 +256,15 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
       >
-        <meshStandardMaterial
+        <meshPhysicalMaterial
           ref={materialRef}
           color="#16a34a"
           emissive="#16a34a"
-          emissiveIntensity={0.8}
-          roughness={0.2}
-          metalness={0.15}
+          emissiveIntensity={1.4}
+          roughness={0.22}
+          metalness={0.12}
+          clearcoat={0.9}
+          clearcoatRoughness={0.1}
         />
       </mesh>
 
@@ -251,24 +277,26 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
         >
-          <meshStandardMaterial
+          <meshPhysicalMaterial
             color={currentColor.current}
             emissive={currentEmissive.current}
-            emissiveIntensity={materialRef.current?.emissiveIntensity ?? 0.8}
-            roughness={0.2}
-            metalness={0.15}
+            emissiveIntensity={materialRef.current?.emissiveIntensity ?? 1.2}
+            roughness={0.22}
+            metalness={0.12}
+            clearcoat={0.85}
+            clearcoatRoughness={0.12}
           />
         </mesh>
       ))}
 
-      {/* Selection Highlight Halo Rings */}
+      {/* Selection Highlight Halo Wireframe */}
       {isSelected && (
-        <mesh geometry={mainGeometry} scale={1.22}>
+        <mesh geometry={mainGeometry} scale={1.25}>
           <meshBasicMaterial
             color="#2dd4bf"
             wireframe
             transparent
-            opacity={0.3}
+            opacity={0.35}
           />
         </mesh>
       )}
@@ -316,12 +344,16 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({ vesselKey }) => {
   );
 };
 
-export const CoronaryVessels: React.FC = () => {
+interface CoronaryVesselsProps {
+  predictionsOverride?: Record<Target, Prediction> | null;
+}
+
+export const CoronaryVessels: React.FC<CoronaryVesselsProps> = ({ predictionsOverride = null }) => {
   return (
     <group name="CoronaryVesselsOverlay">
-      <VesselBranch vesselKey="LAD" />
-      <VesselBranch vesselKey="LCX" />
-      <VesselBranch vesselKey="RCA" />
+      <VesselBranch vesselKey="LAD" predictionsOverride={predictionsOverride} />
+      <VesselBranch vesselKey="LCX" predictionsOverride={predictionsOverride} />
+      <VesselBranch vesselKey="RCA" predictionsOverride={predictionsOverride} />
     </group>
   );
 };
