@@ -185,13 +185,13 @@ export const HeartScene: React.FC = () => {
         <ThreeErrorBoundary>
           <Canvas
             dpr={dpr}
-            camera={{ position: isCompareMode ? [0, 0.4, 4.8] : [0, 0.4, 3.8], fov: 45 }}
+            camera={{ position: isCompareMode ? [0, 0.2, 4.4] : [0, 0.12, 3.2], fov: 42 }}
             gl={{
               antialias: true,
               alpha: true,
               powerPreference: 'high-performance',
               toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: isAngiogramMode ? 1.25 : 1.12,
+              toneMappingExposure: isAngiogramMode ? 1.25 : 1.08,
             }}
           >
             {/* Cinematic Lighting Rig (Dims to Cath-Lab Dark Fluoroscopy in Angiogram mode) */}

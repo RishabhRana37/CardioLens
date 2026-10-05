@@ -110,27 +110,41 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
         centeredScene: null,
         inspectedNodes: [],
         detectedMode: 'MODE_B' as ModelMode,
-        vesselCentroids: { LAD: [0, 0, 0], LCX: [0, 0, 0], RCA: [0, 0, 0] } as Record<VesselKey, [number, number, number]>,
+        vesselCentroids: { LAD: [0.32, 0.05, 0.52], LCX: [0.45, 0.15, -0.25], RCA: [-0.45, -0.15, 0.45] } as Record<VesselKey, [number, number, number]>,
       };
     }
 
     const sceneClone = gltf.scene.clone(true);
 
-    // Compute bounding box of native raw model
+    // Compute bounding box of native raw model in BodyParts3D/DICOM coordinates
     const box = new THREE.Box3().setFromObject(sceneClone);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDimension = Math.max(size.x, size.y, size.z) || 1.0;
 
-    // Target size ~ 2.4 units for ideal camera viewport framing
+    // Target size ~ 2.4 units for ideal camera viewport framing (~70% of screen height)
     const targetScale = 2.4 / maxDimension;
 
-    // Recenter to origin (0,0,0) and apply uniform auto-fit scaling
-    sceneClone.position.set(-center.x * targetScale, -center.y * targetScale, -center.z * targetScale);
-    sceneClone.scale.set(targetScale, targetScale, targetScale);
+    // Center the raw geometry at (0,0,0)
+    sceneClone.position.set(-center.x, -center.y, -center.z);
+
+    // Create oriented root group: Rotate -90 deg on X to align DICOM coordinates with Three.js
+    // DICOM +Z (Superior/Aorta) -> Three.js +Y (Up)
+    // DICOM -Y (Anterior/LAD)   -> Three.js +Z (Towards Camera / Front)
+    // DICOM +X (Patient Left)   -> Three.js +X (Left Ventricle)
+    const rootGroup = new THREE.Group();
+    rootGroup.name = 'AnatomicalHeartOrientedRoot';
+    rootGroup.add(sceneClone);
+    rootGroup.rotation.x = -Math.PI / 2;
+    rootGroup.scale.set(targetScale, targetScale, targetScale);
+
+    // Helper to transform raw DICOM coordinate to world space
+    const transformDicomToWorld = (pt: THREE.Vector3): THREE.Vector3 => {
+      const local = pt.clone().sub(center);
+      return new THREE.Vector3(local.x, local.z, -local.y).multiplyScalar(targetScale);
+    };
 
     // Get procedural organic muscle textures for living striated normal relief
-    const isHeavyDetail = quality === 'cinematic' || quality === 'balanced';
     const { normalMap: organicNormal, roughnessMap: organicRoughness } = getOrganicMuscleTextures();
 
     // Traverse scene graph to inspect all meshes & detect coronary vessels
@@ -139,7 +153,9 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
     const ladRegex = VESSELS.LAD.nodePatterns;
     const lcxRegex = VESSELS.LCX.nodePatterns;
     const rcaRegex = VESSELS.RCA.nodePatterns;
-    const vesselRegex = /artery|coronary|vessel|vein|sinus|cava/i;
+    const aortaRegex = /aort/i;
+    const pulmonaryRegex = /pulmonary.*(trunk|artery)|proper \[MM607\]/i;
+    const veinRegex = /cardiac vein|marginal vein|coronary sinus|vena cava/i;
     const septumRegex = /septum|septal/i;
     const chamberRegex = /atrium|ventricle|auricle|wall/i;
 
@@ -164,6 +180,7 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           ? geom.boundingBox.getCenter(new THREE.Vector3())
           : new THREE.Vector3();
 
+        const transformedCenter = transformDicomToWorld(meshCenter);
         const name = mesh.name || 'Unnamed_Mesh';
         let category: InspectedNodeInfo['category'] = 'OTHER';
 
@@ -179,7 +196,7 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           category = 'SEPTUM';
         } else if (chamberRegex.test(name)) {
           category = 'MYOCARDIUM';
-        } else if (vesselRegex.test(name)) {
+        } else if (aortaRegex.test(name) || pulmonaryRegex.test(name) || veinRegex.test(name)) {
           category = 'VESSEL';
         }
 
@@ -191,44 +208,26 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           faceCount: fCount,
           hasMaterial: Boolean(mesh.material),
           center: [
-            Number(meshCenter.x.toFixed(2)),
-            Number(meshCenter.y.toFixed(2)),
-            Number(meshCenter.z.toFixed(2)),
+            Number(transformedCenter.x.toFixed(2)),
+            Number(transformedCenter.y.toFixed(2)),
+            Number(transformedCenter.z.toFixed(2)),
           ],
           category,
         });
 
-        // Detect if the model already ships with baked texture maps
-        const existingMat = mesh.material as any;
-        const hasExistingTextures = Boolean(existingMat && (existingMat.map || existingMat.normalMap));
-
         // 1. CORONARY ARTERY VESSELS (LAD, LCX, RCA)
         if (category === 'LAD' || category === 'LCX' || category === 'RCA') {
           const vKey = category as VesselKey;
-          let mat: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
-
-          if (isHeavyDetail) {
-            mat = new THREE.MeshPhysicalMaterial({
-              color: '#16a34a',
-              emissive: '#16a34a',
-              emissiveIntensity: 0.8,
-              roughness: 0.16,
-              metalness: 0.16,
-              clearcoat: 0.95,
-              clearcoatRoughness: 0.06,
-              ior: 1.45,
-              side: THREE.DoubleSide,
-            });
-          } else {
-            mat = new THREE.MeshStandardMaterial({
-              color: '#16a34a',
-              emissive: '#16a34a',
-              emissiveIntensity: 0.8,
-              roughness: 0.22,
-              metalness: 0.15,
-              side: THREE.DoubleSide,
-            });
-          }
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: '#16a34a',
+            emissive: '#16a34a',
+            emissiveIntensity: 0.9,
+            roughness: 0.28,
+            metalness: 0.12,
+            clearcoat: 0.65,
+            clearcoatRoughness: 0.15,
+            side: THREE.FrontSide,
+          });
 
           mesh.material = mat;
           mesh.userData.vesselKey = vKey;
@@ -236,104 +235,84 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           mesh.userData.originalMaterial = mat;
           vesselMaterials.current[vKey].push(mat);
 
-          vesselAccumulators[vKey].sum.add(meshCenter);
+          vesselAccumulators[vKey].sum.add(transformedCenter);
           vesselAccumulators[vKey].count++;
         }
-        // 2. PRE-EXISTING TEXTURED MYOCARDIUM
-        else if (hasExistingTextures) {
-          const mat = existingMat.clone();
-          if (isHeavyDetail && mat.isMeshStandardMaterial) {
-            mat.roughness = Math.min(mat.roughness ?? 0.4, 0.38);
-            mat.metalness = Math.min(mat.metalness ?? 0.1, 0.05);
-          }
+        // 2. GREAT ARTERIES: ASCENDING AORTA
+        else if (aortaRegex.test(name)) {
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: '#a84e5b',
+            roughness: 0.48,
+            metalness: 0.04,
+            clearcoat: 0.32,
+            clearcoatRoughness: 0.25,
+            side: THREE.FrontSide,
+          });
           mesh.material = mat;
           mesh.userData.originalMaterial = mat;
           myoMaterials.current.push(mat);
         }
-        // 3. VALVES & LEAFLETS
+        // 3. GREAT ARTERIES: PULMONARY TRUNK
+        else if (pulmonaryRegex.test(name)) {
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: '#6a2638',
+            roughness: 0.50,
+            metalness: 0.03,
+            clearcoat: 0.30,
+            clearcoatRoughness: 0.25,
+            side: THREE.FrontSide,
+          });
+          mesh.material = mat;
+          mesh.userData.originalMaterial = mat;
+          myoMaterials.current.push(mat);
+        }
+        // 4. VENOUS VESSELS (CARDIAC VEINS & CORONARY SINUS)
+        else if (veinRegex.test(name)) {
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: '#244062',
+            roughness: 0.44,
+            metalness: 0.06,
+            clearcoat: 0.35,
+            clearcoatRoughness: 0.2,
+            side: THREE.FrontSide,
+          });
+          mesh.material = mat;
+          mesh.userData.originalMaterial = mat;
+          myoMaterials.current.push(mat);
+        }
+        // 5. VALVES & FIBROUS SKELETON
         else if (category === 'VALVE') {
-          let mat: THREE.Material;
-          if (isHeavyDetail) {
-            mat = new THREE.MeshPhysicalMaterial({
-              color: '#e8edf5',
-              roughness: 0.24,
-              metalness: 0.08,
-              transmission: 0.35,
-              thickness: 0.6,
-              ior: 1.4,
-              clearcoat: 0.7,
-              clearcoatRoughness: 0.15,
-              side: THREE.DoubleSide,
-            });
-          } else {
-            mat = new THREE.MeshStandardMaterial({
-              color: '#e2e8f0',
-              roughness: 0.35,
-              metalness: 0.08,
-              side: THREE.DoubleSide,
-            });
-          }
+          const mat = new THREE.MeshStandardMaterial({
+            color: '#e2e8f0',
+            roughness: 0.42,
+            metalness: 0.05,
+            side: THREE.FrontSide,
+          });
           mesh.material = mat;
           mesh.userData.originalMaterial = mat;
           myoMaterials.current.push(mat as any);
         }
-        // 4. VENOUS VESSELS & CORONARY SINUS
-        else if (category === 'VESSEL') {
-          let mat: THREE.Material;
-          if (isHeavyDetail) {
-            mat = new THREE.MeshPhysicalMaterial({
-              color: '#1d4ed8',
-              roughness: 0.2,
-              metalness: 0.18,
-              clearcoat: 0.85,
-              clearcoatRoughness: 0.08,
-              side: THREE.DoubleSide,
-            });
-          } else {
-            mat = new THREE.MeshStandardMaterial({
-              color: '#2563eb',
-              roughness: 0.28,
-              metalness: 0.18,
-              side: THREE.DoubleSide,
-            });
-          }
-          mesh.material = mat;
-          mesh.userData.originalMaterial = mat;
-          myoMaterials.current.push(mat as any);
-        }
-        // 5. LIVING MYOCARDIUM & CHAMBER WALLS
+        // 6. LIVING MYOCARDIUM & CHAMBER WALLS (COHERENT SOLID ORGAN)
         else {
           const isAtrium = /atrium|auricle/i.test(name);
           const isSeptum = category === 'SEPTUM';
 
-          const myoColor = isAtrium ? '#982c3c' : isSeptum ? '#7e1826' : '#8c1e2d';
+          const myoColor = isAtrium ? '#922837' : isSeptum ? '#781622' : '#841e2b';
 
-          let mat: THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial;
-          if (isHeavyDetail) {
-            mat = new THREE.MeshPhysicalMaterial({
-              color: myoColor,
-              roughness: 0.36,
-              metalness: 0.04,
-              clearcoat: 0.78,
-              clearcoatRoughness: 0.1,
-              transmission: 0.14,
-              thickness: 0.85,
-              ior: 1.42,
-              attenuationColor: new THREE.Color('#ff2a3a'),
-              attenuationDistance: 0.7,
-              normalMap: organicNormal,
-              normalScale: new THREE.Vector2(0.25, 0.25),
-              roughnessMap: organicRoughness,
-              side: THREE.DoubleSide,
-            });
-          } else {
-            mat = new THREE.MeshStandardMaterial({
-              color: myoColor,
-              roughness: 0.45,
-              metalness: 0.04,
-              side: THREE.DoubleSide,
-            });
-          }
+          const mat = new THREE.MeshPhysicalMaterial({
+            color: myoColor,
+            roughness: 0.54,
+            metalness: 0.02,
+            clearcoat: 0.32,
+            clearcoatRoughness: 0.28,
+            transmission: 0, // Solid opaque living tissue (no hollow glass)
+            ior: 1.4,
+            normalMap: organicNormal,
+            normalScale: new THREE.Vector2(0.18, 0.18),
+            roughnessMap: organicRoughness,
+            side: THREE.FrontSide, // Strict front-face culling
+          });
+
           mesh.material = mat;
           mesh.userData.originalMaterial = mat;
           mesh.userData.baseMyoColor = myoColor;
@@ -349,28 +328,27 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
 
     const mode: ModelMode = isModeA ? 'MODE_A' : 'MODE_B';
 
-    // Calculate scaled world-space centroids for tooltips
+    // Calculate transformed world-space centroids for tooltips
     const centroids: Record<VesselKey, [number, number, number]> = {
-      LAD: [0.15, 0.1, 0.45],
-      LCX: [-0.45, 0.1, 0.2],
-      RCA: [0.45, -0.1, 0.2],
+      LAD: [0.32, 0.05, 0.52],
+      LCX: [0.45, 0.15, -0.25],
+      RCA: [-0.45, -0.15, 0.45],
     };
 
     (['LAD', 'LCX', 'RCA'] as VesselKey[]).forEach((vKey) => {
       const acc = vesselAccumulators[vKey];
       if (acc.count > 0) {
         const avg = acc.sum.clone().divideScalar(acc.count);
-        avg.sub(center).multiplyScalar(targetScale);
         centroids[vKey] = [
           Number(avg.x.toFixed(3)),
-          Number((avg.y + 0.08).toFixed(3)),
-          Number((avg.z + 0.08).toFixed(3)),
+          Number((avg.y + 0.06).toFixed(3)),
+          Number((avg.z + 0.06).toFixed(3)),
         ];
       }
     });
 
     return {
-      centeredScene: sceneClone,
+      centeredScene: rootGroup,
       inspectedNodes: nodesInfo,
       detectedMode: mode,
       vesselCentroids: centroids,

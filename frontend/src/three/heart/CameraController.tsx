@@ -11,9 +11,9 @@ export const CameraController: React.FC = () => {
   const { selectedVessel, quality, cameraPreset, setCameraPreset } = useAppStore();
   const { camera } = useThree();
 
-  // Target camera position and lookAt vector
-  const targetCamPos = useRef(new THREE.Vector3(0, 0.3, 3.8));
-  const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
+  // Target camera position and lookAt vector (Canonical Anterior View: ~70% viewport fill)
+  const targetCamPos = useRef(new THREE.Vector3(0, 0.12, 3.2));
+  const targetLookAt = useRef(new THREE.Vector3(0, 0.02, 0));
   const isTransitioning = useRef(false);
 
   // Intro Orbit Animation State
@@ -43,13 +43,13 @@ export const CameraController: React.FC = () => {
       isTransitioning.current = true;
       isIntroOrbiting.current = false;
     } else if (!cameraPreset) {
-      targetCamPos.current.set(0, 0.3, 3.8);
-      targetLookAt.current.set(0, 0, 0);
+      targetCamPos.current.set(0, 0.12, 3.2);
+      targetLookAt.current.set(0, 0.02, 0);
       isTransitioning.current = true;
     }
   }, [selectedVessel, cameraPreset]);
 
-  // Handle camera presets (Anterior, Posterior, Left, Right, Apical)
+  // Handle camera presets (Anterior, Posterior, LAO, RAO, Apical)
   useEffect(() => {
     if (!cameraPreset) return;
 
@@ -58,24 +58,26 @@ export const CameraController: React.FC = () => {
 
     switch (cameraPreset) {
       case 'anterior':
-        targetCamPos.current.set(0, 0.3, 3.8);
-        targetLookAt.current.set(0, 0, 0);
+        targetCamPos.current.set(0, 0.12, 3.2);
+        targetLookAt.current.set(0, 0.02, 0);
         break;
       case 'posterior':
-        targetCamPos.current.set(0, 0.3, -3.8);
-        targetLookAt.current.set(0, 0, 0);
+        targetCamPos.current.set(0, 0.12, -3.2);
+        targetLookAt.current.set(0, 0.02, 0);
         break;
       case 'left':
-        targetCamPos.current.set(-3.8, 0.3, 0.2);
-        targetLookAt.current.set(-0.1, 0, 0);
-        break;
-      case 'right':
-        targetCamPos.current.set(3.8, 0.3, 0.2);
+        // Left Anterior Oblique (LAO) - View Left Ventricle & LCX
+        targetCamPos.current.set(2.2, 0.15, 2.2);
         targetLookAt.current.set(0.1, 0, 0);
         break;
+      case 'right':
+        // Right Anterior Oblique (RAO) - View Right Ventricle & RCA
+        targetCamPos.current.set(-2.2, 0.15, 2.2);
+        targetLookAt.current.set(-0.1, 0, 0);
+        break;
       case 'apical':
-        targetCamPos.current.set(0, -3.6, 0.9);
-        targetLookAt.current.set(0, -0.2, 0);
+        targetCamPos.current.set(0.3, -2.6, 1.5);
+        targetLookAt.current.set(0.1, -0.2, 0);
         break;
     }
   }, [cameraPreset]);
