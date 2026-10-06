@@ -21,6 +21,7 @@ import {
   Box,
   RefreshCw,
   Sparkles,
+  FastForward,
 } from 'lucide-react';
 
 export const HeartScene: React.FC = () => {
@@ -43,6 +44,8 @@ export const HeartScene: React.FC = () => {
     toggleAngiogramMode,
     isCompareMode,
     toggleCompareMode,
+    isIntroPlaying,
+    skipIntro,
   } = useAppStore();
 
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
@@ -54,7 +57,7 @@ export const HeartScene: React.FC = () => {
     setIsModelReady(true);
   }, []);
 
-  // Global keyboard shortcuts (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat, I: Inspector, A: Angiogram, C: Compare)
+  // Global keyboard shortcuts (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat, I: Inspector, A: Angiogram, C: Compare, Esc: Skip Intro)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is currently typing in an input/textarea
@@ -62,6 +65,9 @@ export const HeartScene: React.FC = () => {
         return;
       }
 
+      if (e.key === 'Escape' && isIntroPlaying) {
+        skipIntro();
+      }
       if (e.key === '1') selectVessel(null);
       if (e.key === '2') selectVessel('LAD');
       if (e.key === '3') selectVessel('LCX');
@@ -83,7 +89,7 @@ export const HeartScene: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectVessel, toggleAngiogramMode, toggleCompareMode]);
+  }, [selectVessel, toggleAngiogramMode, toggleCompareMode, isIntroPlaying, skipIntro]);
 
   return (
     <div className="relative w-full h-full min-h-[560px] lg:min-h-[680px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group select-none">
@@ -120,6 +126,32 @@ export const HeartScene: React.FC = () => {
             className="absolute inset-0 z-40"
           >
             <BrandedHeartSkeleton message="Reconstructing 3D Cardiac Digital Twin..." />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Skippable Product Reveal Intro Pill */}
+      <AnimatePresence>
+        {isIntroPlaying && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-30 pointer-events-auto"
+          >
+            <button
+              onClick={skipIntro}
+              title="Skip Intro (Escape)"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-teal-500/40 text-xs font-mono font-semibold text-slate-200 backdrop-blur-xl shadow-glass-md hover:border-teal-400 hover:text-white transition-all group/skip"
+            >
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+              <span>Cinematic Reveal</span>
+              <span className="text-slate-500">·</span>
+              <span className="text-teal-300 font-bold flex items-center gap-1 group-hover/skip:translate-x-0.5 transition-transform">
+                Skip <FastForward className="w-3.5 h-3.5" />
+              </span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

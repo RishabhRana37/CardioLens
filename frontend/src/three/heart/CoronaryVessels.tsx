@@ -169,55 +169,101 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
   }, [anchorConfig.branches, anchorConfig.radius]);
 
   // Reusable Color instances for zero GC per frame
-  const currentColor = useRef(new THREE.Color('#16a34a'));
-  const currentEmissive = useRef(new THREE.Color('#16a34a'));
-  const targetColor = useRef(new THREE.Color('#16a34a'));
-  const targetEmissive = useRef(new THREE.Color('#16a34a'));
+  const currentColor = useRef(new THREE.Color('#334155'));
+  const currentEmissive = useRef(new THREE.Color('#1e293b'));
+  const targetColor = useRef(new THREE.Color('#334155'));
+  const targetEmissive = useRef(new THREE.Color('#1e293b'));
+  const introStartTime = useRef<number | null>(null);
+
+  const { isIntroPlaying, introKey } = useAppStore();
+
+  useEffect(() => {
+    introStartTime.current = null;
+    if (isIntroPlaying) {
+      currentColor.current.set('#334155');
+      currentEmissive.current.set('#1e293b');
+    }
+  }, [introKey, isIntroPlaying]);
 
   useFrame((state, delta) => {
     if (!materialRef.current) return;
 
-    // Read continuous target risk color (green -> amber -> red)
-    const rgb = riskColor3(probability);
-    targetColor.current.setRGB(rgb.r, rgb.g, rgb.b);
-    targetEmissive.current.setRGB(rgb.r, rgb.g, rgb.b);
+    let intensity: number;
+    const isIntro = isIntroPlaying && quality !== 'performance';
 
-    // Smooth LERP transition (~400ms)
-    const lerpSpeed = delta * 5.0;
-    currentColor.current.lerp(targetColor.current, lerpSpeed);
-    currentEmissive.current.lerp(targetEmissive.current, lerpSpeed);
+    if (isIntro) {
+      if (introStartTime.current === null) {
+        introStartTime.current = state.clock.getElapsedTime();
+      }
+      const elapsed = state.clock.getElapsedTime() - introStartTime.current;
+
+      // Sequential ignition windows: LAD (0.35s - 1.1s) -> LCX (0.95s - 1.7s) -> RCA (1.55s - 2.3s)
+      const schedule: Record<VesselKey, { start: number; duration: number }> = {
+        LAD: { start: 0.35, duration: 0.75 },
+        LCX: { start: 0.95, duration: 0.75 },
+        RCA: { start: 1.55, duration: 0.75 },
+      };
+
+      const { start, duration } = schedule[vesselKey];
+      const greyColor = new THREE.Color('#334155');
+      const rgb = riskColor3(probability);
+      const activeColor = new THREE.Color(rgb.r, rgb.g, rgb.b);
+
+      if (elapsed < start) {
+        targetColor.current.copy(greyColor);
+        targetEmissive.current.setRGB(0.04, 0.06, 0.1);
+        intensity = 0.2;
+      } else if (elapsed < start + duration) {
+        const p = (elapsed - start) / duration;
+        const ease = 1 - Math.cos(p * Math.PI * 0.5);
+        targetColor.current.copy(greyColor).lerp(activeColor, ease);
+        targetEmissive.current.copy(greyColor).lerp(activeColor, ease);
+        // Dramatic ignition flare pulse
+        const flare = Math.sin(p * Math.PI) * 1.8;
+        intensity = 0.4 + ease * 1.8 + flare;
+      } else {
+        targetColor.current.copy(activeColor);
+        targetEmissive.current.copy(activeColor);
+        intensity = 1.6 + probability * 0.6;
+      }
+
+      currentColor.current.lerp(targetColor.current, delta * 7.0);
+      currentEmissive.current.lerp(targetEmissive.current, delta * 7.0);
+    } else {
+      // Read continuous target risk color (green -> amber -> red)
+      const rgb = riskColor3(probability);
+      targetColor.current.setRGB(rgb.r, rgb.g, rgb.b);
+      targetEmissive.current.setRGB(rgb.r, rgb.g, rgb.b);
+
+      // Smooth LERP transition (~400ms)
+      const lerpSpeed = delta * 5.0;
+      currentColor.current.lerp(targetColor.current, lerpSpeed);
+      currentEmissive.current.lerp(targetEmissive.current, lerpSpeed);
+
+      if (isAngiogramMode) {
+        intensity = 2.8 + probability * 1.4;
+      } else if (isWholeHeart) {
+        intensity = probability > 0.66 ? 2.0 : probability > 0.33 ? 1.5 : 1.2;
+      } else if (isSelected) {
+        intensity = 2.4 + probability * 0.8;
+      } else {
+        intensity = 0.9;
+      }
+
+      if (isHovered) {
+        intensity += 0.6;
+      }
+
+      // High-risk vessel soft organic rhythmic pulse
+      if (probability > 0.66 && quality !== 'performance') {
+        const time = state.clock.getElapsedTime();
+        const pulse = Math.sin(time * 4.0) * 0.4 + 0.4;
+        intensity += pulse;
+      }
+    }
 
     materialRef.current.color.copy(currentColor.current);
     materialRef.current.emissive.copy(currentEmissive.current);
-
-    // Dynamic Emissive Intensity Calculation
-    // In Angiogram Mode: intense fluoroscopic glow (2.8 - 4.5)
-    // In Whole-Heart (CAD overview): all 3 vessels glow brightly (1.4 - 2.2)
-    // When a single vessel is selected: selected vessel is boosted (+1.0), others stay visible at ~1.0
-    let intensity: number;
-
-    if (isAngiogramMode) {
-      intensity = 2.8 + probability * 1.4;
-    } else if (isWholeHeart) {
-      intensity = probability > 0.66 ? 2.0 : probability > 0.33 ? 1.5 : 1.2;
-    } else if (isSelected) {
-      intensity = 2.4 + probability * 0.8;
-    } else {
-      // Unselected vessel in single-vessel inspection mode
-      intensity = 0.9;
-    }
-
-    if (isHovered) {
-      intensity += 0.6;
-    }
-
-    // High-risk vessel soft organic rhythmic pulse
-    if (probability > 0.66 && quality !== 'performance') {
-      const time = state.clock.getElapsedTime();
-      const pulse = Math.sin(time * 4.0) * 0.4 + 0.4;
-      intensity += pulse;
-    }
-
     materialRef.current.emissiveIntensity = intensity;
   });
 

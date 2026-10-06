@@ -12,6 +12,7 @@ import {
   Cpu,
   Scissors,
   GitCompare,
+  Clapperboard,
 } from 'lucide-react';
 
 interface FloatingControlDockProps {
@@ -44,6 +45,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
     setCameraPreset,
     isCrossSectionOpen,
     toggleCrossSection,
+    playIntro,
   } = useAppStore();
 
   const effectivePredictions = isProjectionMode && projectionPredictions ? projectionPredictions : predictions;
@@ -237,7 +239,17 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
           ))}
         </div>
 
-        {/* 7. Model Inspector Toggle */}
+        {/* 7. Replay Intro Reveal Button */}
+        <button
+          onClick={playIntro}
+          title="Replay Cinematic 3D Intro Sequence"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900/90 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 text-xs transition-colors"
+        >
+          <Clapperboard className="w-3.5 h-3.5 text-teal-400" />
+          <span className="hidden sm:inline">Replay</span>
+        </button>
+
+        {/* 8. Model Inspector Toggle */}
         <button
           onClick={onToggleInspector}
           title="Toggle 3D Model Inspector (Key: I)"
@@ -250,7 +262,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
           <Layers className="w-3.5 h-3.5" />
         </button>
 
-        {/* 8. Camera Reset Button */}
+        {/* 9. Camera Reset Button */}
         <button
           onClick={() => {
             selectVessel(null);

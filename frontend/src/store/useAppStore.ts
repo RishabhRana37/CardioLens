@@ -73,6 +73,12 @@ export interface AppState {
   setProjectionMode: (active: boolean) => void;
   setProjectionPredictions: (preds: Record<Target, Prediction> | null) => void;
 
+  // Intro Reveal Animation State
+  isIntroPlaying: boolean;
+  introKey: number;
+  playIntro: () => void;
+  skipIntro: () => void;
+
   // UI Setting Actions
   setQuality: (quality: GraphicQuality) => void;
   setTheme: (theme: AppTheme) => void;
@@ -117,6 +123,10 @@ export const useAppStore = create<AppState>()(
       errorMessage: null,
       isPredicting: false,
       isExplaining: false,
+
+      // Intro Reveal State
+      isIntroPlaying: true,
+      introKey: 0,
 
       schema: null,
       patients: [],
@@ -372,6 +382,19 @@ export const useAppStore = create<AppState>()(
           quality: compare && state.quality === 'cinematic' ? 'balanced' : state.quality,
         })),
       setCameraPreset: (preset) => set({ cameraPreset: preset }),
+
+      playIntro: () => {
+        set((state) => ({
+          isIntroPlaying: true,
+          introKey: state.introKey + 1,
+          selectedVessel: null,
+          cameraPreset: null,
+        }));
+      },
+
+      skipIntro: () => {
+        set({ isIntroPlaying: false });
+      },
 
       setDisclaimerAcknowledged: (ack) =>
         set({ disclaimerAcknowledged: ack, isDisclaimerModalOpen: false }),

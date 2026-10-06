@@ -5,7 +5,15 @@ import { riskGradient, getRiskTier } from '../colorScale';
 import { Activity, ShieldAlert, HeartPulse } from 'lucide-react';
 
 export const RadialRiskGauge: React.FC = () => {
-  const { selectedVessel, predictions, projectionPredictions, isProjectionMode } = useAppStore();
+  const {
+    selectedVessel,
+    predictions,
+    projectionPredictions,
+    isProjectionMode,
+    isIntroPlaying,
+    introKey,
+    quality,
+  } = useAppStore();
 
   const isVesselSelected = selectedVessel !== null && selectedVessel !== 'CAD';
   const vesselKey = isVesselSelected ? (selectedVessel as VesselKey) : null;
@@ -17,25 +25,45 @@ export const RadialRiskGauge: React.FC = () => {
   const targetProb = targetPred?.probability ?? 0.24;
 
   // Animated Count-up for probability number
-  const [displayProb, setDisplayProb] = useState<number>(targetProb);
+  const [displayProb, setDisplayProb] = useState<number>(() => (isIntroPlaying ? 0.0 : targetProb));
   const animFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    let startVal = displayProb;
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
+    const isIntro = isIntroPlaying && quality !== 'performance';
+    const startVal = isIntro ? 0.0 : displayProb;
     const endVal = targetProb;
     const startTime = performance.now();
-    const duration = 650; // ms
+    const duration = isIntro ? 2400 : 650; // ms
 
     const animate = (now: number) => {
       const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1 - progress, 3);
-      const current = startVal + (endVal - startVal) * ease;
-      setDisplayProb(current);
 
-      if (progress < 1) {
-        animFrameRef.current = requestAnimationFrame(animate);
+      if (isIntro) {
+        // Wait 400ms before starting count-up to sync with LAD ignition
+        if (elapsed < 400) {
+          setDisplayProb(0.0);
+          animFrameRef.current = requestAnimationFrame(animate);
+          return;
+        }
+        const activeElapsed = elapsed - 400;
+        const activeDuration = duration - 400;
+        const progress = Math.min(1, activeElapsed / activeDuration);
+        const ease = 1 - Math.pow(1 - progress, 2.5);
+        setDisplayProb(startVal + (endVal - startVal) * ease);
+
+        if (progress < 1) {
+          animFrameRef.current = requestAnimationFrame(animate);
+        }
+      } else {
+        const progress = Math.min(1, elapsed / duration);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        setDisplayProb(startVal + (endVal - startVal) * ease);
+
+        if (progress < 1) {
+          animFrameRef.current = requestAnimationFrame(animate);
+        }
       }
     };
 
@@ -44,7 +72,7 @@ export const RadialRiskGauge: React.FC = () => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [targetProb]);
+  }, [targetProb, isIntroPlaying, introKey, quality]);
 
   const riskColor = riskGradient(displayProb);
   const { label: tierLabel, tier } = getRiskTier(displayProb);

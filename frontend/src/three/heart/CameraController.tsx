@@ -8,7 +8,15 @@ import { VESSELS, VesselKey } from '../../config/vessels.config';
 
 export const CameraController: React.FC = () => {
   const controlsRef = useRef<OrbitControlsImpl>(null);
-  const { selectedVessel, quality, cameraPreset, setCameraPreset } = useAppStore();
+  const {
+    selectedVessel,
+    quality,
+    cameraPreset,
+    setCameraPreset,
+    isIntroPlaying,
+    introKey,
+    skipIntro,
+  } = useAppStore();
   const { camera } = useThree();
 
   // Target camera position and lookAt vector (Canonical Anterior View: ~70% viewport fill)
@@ -16,8 +24,7 @@ export const CameraController: React.FC = () => {
   const targetLookAt = useRef(new THREE.Vector3(0, 0.02, 0));
   const isTransitioning = useRef(false);
 
-  // Intro Orbit Animation State
-  const isIntroOrbiting = useRef(true);
+  // Intro Animation Clock
   const introStartTime = useRef<number | null>(null);
 
   // Auto-Orbit Idle State (pauses on user interaction or vessel selection)
@@ -25,35 +32,40 @@ export const CameraController: React.FC = () => {
   const lastInteractionTime = useRef(Date.now());
 
   // Detect prefers-reduced-motion
-  const prefersReducedMotion = typeof window !== 'undefined' &&
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Reset intro start time when introKey changes
   useEffect(() => {
     if (prefersReducedMotion || quality === 'performance') {
-      isIntroOrbiting.current = false;
+      skipIntro();
+    } else if (isIntroPlaying) {
+      introStartTime.current = null;
+      isTransitioning.current = false;
     }
-  }, [prefersReducedMotion, quality]);
+  }, [introKey, isIntroPlaying, prefersReducedMotion, quality, skipIntro]);
 
   // Handle selected vessel framing
   useEffect(() => {
+    if (isIntroPlaying) return;
+
     if (selectedVessel && selectedVessel !== 'CAD') {
       const vConfig = VESSELS[selectedVessel as VesselKey];
       targetCamPos.current.set(...vConfig.camera);
       targetLookAt.current.set(...vConfig.targetLookAt);
       isTransitioning.current = true;
-      isIntroOrbiting.current = false;
     } else if (!cameraPreset) {
       targetCamPos.current.set(0, 0.12, 3.2);
       targetLookAt.current.set(0, 0.02, 0);
       isTransitioning.current = true;
     }
-  }, [selectedVessel, cameraPreset]);
+  }, [selectedVessel, cameraPreset, isIntroPlaying]);
 
   // Handle camera presets (Anterior, Posterior, LAO, RAO, Apical)
   useEffect(() => {
-    if (!cameraPreset) return;
+    if (!cameraPreset || isIntroPlaying) return;
 
-    isIntroOrbiting.current = false;
     isTransitioning.current = true;
 
     switch (cameraPreset) {
@@ -80,34 +92,40 @@ export const CameraController: React.FC = () => {
         targetLookAt.current.set(0.1, -0.2, 0);
         break;
     }
-  }, [cameraPreset]);
+  }, [cameraPreset, isIntroPlaying]);
 
   useFrame((state, delta) => {
     if (!controlsRef.current) return;
 
-    // 1. First-load Intro Orbit (2.4s cinematic sweep)
-    if (isIntroOrbiting.current && quality === 'cinematic') {
+    // 1. First-load / Replay Cinematic Intro Ease-in (~2.5s from wide to anterior home)
+    if (isIntroPlaying && quality !== 'performance' && !prefersReducedMotion) {
       if (introStartTime.current === null) {
         introStartTime.current = state.clock.getElapsedTime();
       }
 
       const elapsed = state.clock.getElapsedTime() - introStartTime.current;
-      const duration = 2.4;
+      const duration = 2.5;
 
       if (elapsed < duration) {
-        const progress = elapsed / duration;
-        const ease = Math.sin((progress * Math.PI) / 2);
-        const angle = (1 - ease) * 0.9;
-        const dist = 4.6 - ease * 0.8;
+        const progress = Math.min(1, elapsed / duration);
+        // Smooth cubic ease-out curve
+        const ease = 1 - Math.pow(1 - progress, 3);
 
-        camera.position.x = Math.sin(angle) * dist;
-        camera.position.y = 0.6 - ease * 0.3;
-        camera.position.z = Math.cos(angle) * dist;
-        controlsRef.current.target.set(0, 0, 0);
+        const startY = 0.45;
+        const targetY = 0.12;
+        const startZ = 5.2;
+        const targetZ = 3.2;
+
+        camera.position.set(
+          0,
+          startY + (targetY - startY) * ease,
+          startZ + (targetZ - startZ) * ease
+        );
+        controlsRef.current.target.set(0, 0.02, 0);
         controlsRef.current.update();
         return;
       } else {
-        isIntroOrbiting.current = false;
+        skipIntro();
       }
     }
 
@@ -133,7 +151,7 @@ export const CameraController: React.FC = () => {
     const timeSinceInteraction = Date.now() - lastInteractionTime.current;
     if (
       !isTransitioning.current &&
-      !isIntroOrbiting.current &&
+      !isIntroPlaying &&
       !isUserInteracting.current &&
       !selectedVessel &&
       timeSinceInteraction > 4000 &&
@@ -163,7 +181,7 @@ export const CameraController: React.FC = () => {
       minPolarAngle={Math.PI / 6}
       onStart={() => {
         isUserInteracting.current = true;
-        isIntroOrbiting.current = false;
+        if (isIntroPlaying) skipIntro();
         isTransitioning.current = false;
         lastInteractionTime.current = Date.now();
       }}
