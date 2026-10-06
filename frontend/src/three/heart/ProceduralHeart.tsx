@@ -11,7 +11,8 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
   const groupRef = useRef<THREE.Group>(null);
   const myocardiumMatRef = useRef<THREE.MeshPhysicalMaterial>(null);
 
-  const { quality, predictions, selectedVessel } = useAppStore();
+  const { quality, predictions, selectedVessel, isAngiogramMode } = useAppStore();
+  const angioTransition = useRef<number>(0);
 
   // Color palette matching the anatomical illustration
   const baseMyoColor = useMemo(() => new THREE.Color('#b53846'), []);
@@ -69,7 +70,7 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
   useFrame((state, delta) => {
     if (!groupRef.current) return;
 
-    // Heartbeat Pulse Animation (Lub-Dub rhythm)
+    // Heartbeat Pulse Animation (Lub-Dub rhythm ~68 BPM)
     if (isBeating && quality !== 'performance') {
       const time = state.clock.getElapsedTime();
       const bpm = 68;
@@ -77,25 +78,42 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
 
       const p1 = Math.sin(cycle);
       const p2 = Math.sin(cycle * 2 + 0.3);
-      const beat = Math.max(0, p1 * 0.7 + p2 * 0.3);
+      const beat = Math.max(0, p1 * 0.75 + p2 * 0.25);
 
-      const scalePulse = 1.0 + beat * 0.038;
-      groupRef.current.scale.set(scalePulse, scalePulse * 1.02, scalePulse);
+      const scalePulse = 1.0 + beat * 0.028;
+      groupRef.current.scale.set(scalePulse, scalePulse * 1.015, scalePulse);
       groupRef.current.rotation.y = Math.sin(time * 0.4) * 0.035 + beat * 0.015;
     } else if (isBeating && quality === 'performance') {
       const time = state.clock.getElapsedTime();
       const beat = Math.sin(time * 6) * 0.015;
       groupRef.current.scale.set(1 + beat, 1 + beat, 1 + beat);
+    } else {
+      groupRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), delta * 4.0);
     }
 
-    // Dynamic color lerp
+    // Dynamic color & Angiogram translucent smoky glass transition (~1s)
+    const targetAngio = isAngiogramMode ? 1.0 : 0.0;
+    angioTransition.current = THREE.MathUtils.lerp(angioTransition.current, targetAngio, delta * 2.8);
+    const t = angioTransition.current;
+
     if (myocardiumMatRef.current) {
-      if (selectedVessel === null && cadProb > 0.6) {
-        targetMyoColor.set('#b53846').lerp(new THREE.Color('#dc2626'), (cadProb - 0.6) * 0.5);
+      myocardiumMatRef.current.transparent = t > 0.008;
+      myocardiumMatRef.current.transmission = THREE.MathUtils.lerp(0.0, 0.94, t);
+      myocardiumMatRef.current.opacity = THREE.MathUtils.lerp(1.0, 0.15, t);
+      myocardiumMatRef.current.roughness = THREE.MathUtils.lerp(0.42, 0.08, t);
+      myocardiumMatRef.current.metalness = THREE.MathUtils.lerp(0.06, 0.12, t);
+      myocardiumMatRef.current.clearcoat = THREE.MathUtils.lerp(0.65, 0.95, t);
+
+      if (t > 0.01) {
+        myocardiumMatRef.current.color.lerp(new THREE.Color('#030712'), t);
       } else {
-        targetMyoColor.copy(baseMyoColor);
+        if (selectedVessel === null && cadProb > 0.6) {
+          targetMyoColor.set('#b53846').lerp(new THREE.Color('#dc2626'), (cadProb - 0.6) * 0.5);
+        } else {
+          targetMyoColor.copy(baseMyoColor);
+        }
+        myocardiumMatRef.current.color.lerp(targetMyoColor, delta * 3);
       }
-      myocardiumMatRef.current.color.lerp(targetMyoColor, delta * 3);
     }
   });
 

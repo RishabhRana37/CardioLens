@@ -15,7 +15,7 @@ interface FlowStreamProps {
 const FlowStream: React.FC<FlowStreamProps> = ({
   vesselKey,
   points,
-  particleCount = 36,
+  particleCount = 48,
 }) => {
   const pointsRef = useRef<THREE.Points>(null);
   const { predictions, quality, isAngiogramMode } = useAppStore();
@@ -59,28 +59,37 @@ const FlowStream: React.FC<FlowStreamProps> = ({
     if (isAngiogramMode) {
       const rgb = riskColor3(prob);
       // Boost luminance in angiogram mode
-      colorRef.current.setRGB(Math.min(1, rgb.r * 1.3), Math.min(1, rgb.g * 1.3), Math.min(1, rgb.b * 1.3));
+      colorRef.current.setRGB(
+        Math.min(1, rgb.r * 1.35 + 0.1),
+        Math.min(1, rgb.g * 1.35 + 0.1),
+        Math.min(1, rgb.b * 1.35 + 0.1)
+      );
     } else {
       const rgb = riskColor3(prob);
       colorRef.current.setRGB(rgb.r, rgb.g, rgb.b);
     }
 
-    // Dynamic Stenosis Flow Choking: Flow Speed inversely proportional to stenosis risk (1 - prob * 0.78)
-    const baseFlowRate = isAngiogramMode ? 0.52 : 0.38;
-    const flowChokeFactor = Math.max(0.12, 1.0 - prob * 0.78);
-    const speed = delta * baseFlowRate * flowChokeFactor;
+    // Dynamic Stenosis Flow Choking: Flow Speed inversely proportional to stenosis risk (1 - prob * 0.88)
+    const baseFlowRate = isAngiogramMode ? 0.58 : 0.42;
+    const globalChokeFactor = Math.max(0.08, 1.0 - prob * 0.88);
 
     const posAttr = pointsRef.current.geometry.attributes.position as THREE.BufferAttribute;
     const array = posAttr.array as Float32Array;
 
     for (let i = 0; i < particleCount; i++) {
-      offsets[i] = (offsets[i] + speed) % 1;
       const u = offsets[i];
-      const pt = curve.getPoint(u);
-
-      // Localized particle pinching at lesion site (u ~ 0.42)
+      // Localized particle pinching and extra deceleration at lesion site (u ~ 0.42)
       const lesionDist = Math.abs(u - 0.42);
-      const pinchFactor = lesionDist < 0.08 ? 1.0 - prob * 0.5 : 1.0;
+      const localResistance = lesionDist < 0.12 ? Math.max(0.2, 1.0 - prob * 0.75 * (1.0 - lesionDist / 0.12)) : 1.0;
+
+      const stepSpeed = delta * baseFlowRate * globalChokeFactor * localResistance;
+      offsets[i] = (offsets[i] + stepSpeed) % 1;
+
+      const newU = offsets[i];
+      const pt = curve.getPoint(newU);
+
+      const newLesionDist = Math.abs(newU - 0.42);
+      const pinchFactor = newLesionDist < 0.10 ? 1.0 - prob * 0.45 * (1.0 - newLesionDist / 0.10) : 1.0;
 
       array[i * 3] = pt.x * pinchFactor;
       array[i * 3 + 1] = pt.y;
@@ -94,10 +103,10 @@ const FlowStream: React.FC<FlowStreamProps> = ({
   return (
     <points ref={pointsRef} geometry={geometry}>
       <pointsMaterial
-        size={isAngiogramMode ? 0.048 : 0.035}
+        size={isAngiogramMode ? 0.052 : 0.036}
         color={colorRef.current}
         transparent
-        opacity={isAngiogramMode ? 0.95 : 0.8}
+        opacity={isAngiogramMode ? 0.98 : 0.82}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />

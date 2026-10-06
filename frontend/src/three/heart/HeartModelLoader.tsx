@@ -407,13 +407,15 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
   }, [inspectedNodes, detectedMode, onModelLoaded]);
 
   // Handle Model Inspector node isolation & Angiogram mode transformations
+  const angiogramTransition = useRef<number>(0);
+
+  // Handle Model Inspector node isolation & selection highlights
   useEffect(() => {
     if (!centeredScene) return;
 
     centeredScene.traverse((node: THREE.Object3D) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
-        const isVessel = mesh.userData.isCoronaryVessel;
 
         // 1. Inspector Node Highlight
         if (selectedNodeId) {
@@ -440,79 +442,61 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
             mesh.visible = true;
           }
         }
-        // 2. Angiogram Fluoroscopy Mode: Myocardium melts into translucent smoky glass
-        else if (isAngiogramMode) {
-          if (isVessel) {
-            // Contrast dye radiant vessel
-            if (mesh.userData.originalMaterial) {
-              mesh.material = mesh.userData.originalMaterial;
-            }
-            mesh.visible = true;
-          } else {
-            // Translucent smoky glass myocardium
-            mesh.material = new THREE.MeshPhysicalMaterial({
-              color: '#060b14',
-              roughness: 0.1,
-              metalness: 0.1,
-              transmission: 0.92,
-              thickness: 1.2,
-              ior: 1.25,
-              attenuationColor: new THREE.Color('#0284c7'),
-              attenuationDistance: 0.9,
-              transparent: true,
-              opacity: 0.18,
-              side: THREE.DoubleSide,
-            });
-            mesh.visible = true;
-          }
-        }
-        // 3. Vessel Isolation Mode (Specific Artery selected)
-        else if (selectedVessel) {
-          const vKey = mesh.userData.vesselKey as VesselKey | undefined;
-          if (vKey === selectedVessel) {
-            if (mesh.userData.originalMaterial) {
-              mesh.material = mesh.userData.originalMaterial;
-            }
-            mesh.visible = true;
-          } else if (mesh.userData.isCoronaryVessel) {
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: '#334155',
-              roughness: 0.8,
-              transparent: true,
-              opacity: 0.3,
-              side: THREE.DoubleSide,
-            });
-            mesh.visible = true;
-          } else {
-            mesh.material = new THREE.MeshStandardMaterial({
-              color: '#4a151e',
-              roughness: 0.7,
-              transparent: true,
-              opacity: 0.4,
-              side: THREE.DoubleSide,
-            });
-            mesh.visible = true;
-          }
-        }
-        // 4. Default Whole-Heart Anatomy View
+        // 2. Default material state (continuous shader properties animated in useFrame)
         else {
-          if (mesh.userData.originalMaterial) {
+          if (mesh.userData.originalMaterial && mesh.material !== mesh.userData.originalMaterial) {
             mesh.material = mesh.userData.originalMaterial;
           }
           mesh.visible = true;
         }
       }
     });
-  }, [centeredScene, selectedNodeId, selectedVessel, isAngiogramMode]);
+  }, [centeredScene, selectedNodeId]);
 
-  // Per-frame smooth risk color animation & CAD overall tint
+  // Per-frame smooth risk color animation, Angiogram transition (~1s), CAD tint & 68 BPM Heartbeat
   useFrame((state, delta) => {
     if (selectedNodeId) return;
 
     const lerpSpeed = delta * 4.5;
     const time = state.clock.getElapsedTime();
 
-    // 1. Coronary Artery Vessel Risk Color LERPing (MODE_A)
+    // 1. Smooth Angiogram Transition (~1s glide both ways)
+    const targetAngio = isAngiogramMode ? 1.0 : 0.0;
+    angiogramTransition.current = THREE.MathUtils.lerp(
+      angiogramTransition.current,
+      targetAngio,
+      delta * 2.8
+    );
+    const angioT = angiogramTransition.current;
+
+    // Apply continuous smooth material transition to myocardium & great vessels
+    if (myoMaterials.current.length > 0) {
+      const isPartiallyAngio = angioT > 0.008;
+      const isVesselIsolated = selectedVessel !== null;
+
+      myoMaterials.current.forEach((mat) => {
+        if ('transmission' in mat) {
+          const pMat = mat as THREE.MeshPhysicalMaterial;
+          pMat.transparent = isPartiallyAngio || isVesselIsolated;
+          pMat.transmission = THREE.MathUtils.lerp(0.0, 0.94, angioT);
+          pMat.opacity = isVesselIsolated
+            ? 0.25
+            : THREE.MathUtils.lerp(1.0, 0.14, angioT);
+          pMat.roughness = THREE.MathUtils.lerp(0.54, 0.08, angioT);
+          pMat.metalness = THREE.MathUtils.lerp(0.02, 0.12, angioT);
+          pMat.clearcoat = THREE.MathUtils.lerp(0.32, 0.95, angioT);
+          pMat.thickness = THREE.MathUtils.lerp(0.1, 1.4, angioT);
+          pMat.ior = THREE.MathUtils.lerp(1.4, 1.25, angioT);
+          pMat.depthWrite = !isPartiallyAngio && !isVesselIsolated;
+
+          if (isPartiallyAngio) {
+            pMat.color.lerp(new THREE.Color('#030712'), angioT * 0.5);
+          }
+        }
+      });
+    }
+
+    // 2. Coronary Artery Vessel Risk Color LERPing (MODE_A)
     if (detectedMode === 'MODE_A') {
       (['LAD', 'LCX', 'RCA'] as VesselKey[]).forEach((vKey) => {
         const mats = vesselMaterials.current[vKey];
@@ -531,8 +515,15 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
         const isSelected = selectedVessel === vKey;
         const isHovered = hoveredVessel === vKey;
 
-        // In Angiogram Mode: intense fluoroscopic contrast dye luminescence (2.8 - 4.5)
-        let intensity = isAngiogramMode ? 2.8 + prob * 1.5 : (prob > 0.66 ? 1.6 : prob > 0.33 ? 0.8 : 0.4);
+        // In Angiogram Mode: intense fluoroscopic contrast dye luminescence (3.0 - 4.8)
+        let intensity = isAngiogramMode
+          ? 3.2 + prob * 1.6
+          : prob > 0.66
+          ? 1.6
+          : prob > 0.33
+          ? 0.9
+          : 0.5;
+
         if (isSelected) intensity += 0.8;
         if (isHovered) intensity += 0.6;
 
@@ -549,8 +540,8 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
       });
     }
 
-    // 2. Whole-Heart (CAD) Faint Overall Myocardium Tint (when in Anatomy mode)
-    if (!isAngiogramMode && selectedVessel === null && myoMaterials.current.length > 0) {
+    // 3. Whole-Heart (CAD) Faint Overall Myocardium Tint (when in Anatomy mode)
+    if (!isAngiogramMode && selectedVessel === null && myoMaterials.current.length > 0 && angioT < 0.05) {
       const cadProb = effectivePredictions?.CAD?.probability ?? 0.2;
       const cadRgb = riskColor3(cadProb);
 
@@ -560,6 +551,23 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
       myoMaterials.current.forEach((mat) => {
         mat.color.copy(currentMyoColor.current);
       });
+    }
+
+    // 4. Subtle Continuous Heartbeat Scale-Pulse (~68 BPM = 1.133 Hz) in Anatomy Mode
+    if (isBeating && quality !== 'performance') {
+      const bpm = 68;
+      const cycle = (time * (bpm / 60) * Math.PI * 2) % (Math.PI * 2);
+      // Realistic dual-stroke cardiac contraction (sharp systole + gentle diastolic rebound)
+      const p1 = Math.sin(cycle);
+      const p2 = Math.sin(cycle * 2 + 0.3);
+      const beat = Math.max(0, p1 * 0.75 + p2 * 0.25);
+      const scalePulse = 1.0 + beat * 0.026;
+
+      if (containerRef.current) {
+        containerRef.current.scale.set(scalePulse, scalePulse * 1.015, scalePulse);
+      }
+    } else if (containerRef.current) {
+      containerRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), delta * 4.0);
     }
   });
 

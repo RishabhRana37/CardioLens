@@ -132,33 +132,30 @@ export const ClinicalMetricsSection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveCurveTab('roc')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
-                    activeCurveTab === 'roc'
+                  className={`px-2 py-0.5 rounded transition-colors ${activeCurveTab === 'roc'
                       ? 'bg-teal-600 text-white font-bold'
                       : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   ROC
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveCurveTab('calibration')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
-                    activeCurveTab === 'calibration'
+                  className={`px-2 py-0.5 rounded transition-colors ${activeCurveTab === 'calibration'
                       ? 'bg-teal-600 text-white font-bold'
                       : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   Calibration
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveCurveTab('confusion')}
-                  className={`px-2 py-0.5 rounded transition-colors ${
-                    activeCurveTab === 'confusion'
+                  className={`px-2 py-0.5 rounded transition-colors ${activeCurveTab === 'confusion'
                       ? 'bg-teal-600 text-white font-bold'
                       : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                    }`}
                 >
                   Confusion
                 </button>
