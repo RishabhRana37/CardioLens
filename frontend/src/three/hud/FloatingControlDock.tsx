@@ -13,6 +13,8 @@ import {
   Scissors,
   GitCompare,
   Clapperboard,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface FloatingControlDockProps {
@@ -46,6 +48,8 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
     isCrossSectionOpen,
     toggleCrossSection,
     playIntro,
+    isAudioEnabled,
+    toggleAudio,
   } = useAppStore();
 
   const effectivePredictions = isProjectionMode && projectionPredictions ? projectionPredictions : predictions;
@@ -217,6 +221,29 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
             <>
               <Play className="w-3.5 h-3.5 text-amber-400" />
               <span className="hidden sm:inline">Paused</span>
+            </>
+          )}
+        </button>
+
+        {/* 6. Heartbeat Audio Auscultation Toggle */}
+        <button
+          onClick={toggleAudio}
+          title={isAudioEnabled ? 'Mute Heartbeat Audio (Key: M)' : 'Enable Heartbeat Auscultation Audio (Key: M)'}
+          className={`flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs transition-colors ${
+            isAudioEnabled
+              ? 'bg-slate-900/90 border-teal-500/40 text-teal-300 shadow-glow-teal'
+              : 'bg-slate-900/90 border-white/10 text-slate-400 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          {isAudioEnabled ? (
+            <>
+              <Volume2 className="w-3.5 h-3.5 text-teal-400 animate-pulse" />
+              <span className="hidden md:inline">Sound</span>
+            </>
+          ) : (
+            <>
+              <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden md:inline">Mute</span>
             </>
           )}
         </button>

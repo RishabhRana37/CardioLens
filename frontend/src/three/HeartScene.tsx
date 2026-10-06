@@ -24,6 +24,8 @@ import {
   FastForward,
 } from 'lucide-react';
 
+import { heartbeatAudio } from '../audio/heartbeatAudio';
+
 export const HeartScene: React.FC = () => {
   const [isBeating, setIsBeating] = useState<boolean>(true);
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
@@ -46,6 +48,8 @@ export const HeartScene: React.FC = () => {
     toggleCompareMode,
     isIntroPlaying,
     skipIntro,
+    isAudioEnabled,
+    toggleAudio,
   } = useAppStore();
 
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
@@ -57,7 +61,20 @@ export const HeartScene: React.FC = () => {
     setIsModelReady(true);
   }, []);
 
-  // Global keyboard shortcuts (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat, I: Inspector, A: Angiogram, C: Compare, Esc: Skip Intro)
+  // Synchronize Web Audio heartbeat synthesizer with cardiac rhythm
+  useEffect(() => {
+    if (isBeating && isAudioEnabled) {
+      heartbeatAudio.start(68);
+    } else {
+      heartbeatAudio.stop();
+    }
+
+    return () => {
+      heartbeatAudio.stop();
+    };
+  }, [isBeating, isAudioEnabled]);
+
+  // Global keyboard shortcuts (1: CAD, 2: LAD, 3: LCX, 4: RCA, Space: Beat, M: Audio, I: Inspector, A: Angiogram, C: Compare, Esc: Skip Intro)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is currently typing in an input/textarea
@@ -67,6 +84,9 @@ export const HeartScene: React.FC = () => {
 
       if (e.key === 'Escape' && isIntroPlaying) {
         skipIntro();
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        toggleAudio();
       }
       if (e.key === '1') selectVessel(null);
       if (e.key === '2') selectVessel('LAD');
@@ -89,7 +109,7 @@ export const HeartScene: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectVessel, toggleAngiogramMode, toggleCompareMode, isIntroPlaying, skipIntro]);
+  }, [selectVessel, toggleAngiogramMode, toggleCompareMode, isIntroPlaying, skipIntro, toggleAudio]);
 
   return (
     <div className="relative w-full h-full min-h-[560px] lg:min-h-[680px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group select-none">

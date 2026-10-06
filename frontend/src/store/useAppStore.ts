@@ -79,6 +79,10 @@ export interface AppState {
   playIntro: () => void;
   skipIntro: () => void;
 
+  // Audio Auscultation State
+  isAudioEnabled: boolean;
+  toggleAudio: () => void;
+
   // UI Setting Actions
   setQuality: (quality: GraphicQuality) => void;
   setTheme: (theme: AppTheme) => void;
@@ -127,6 +131,9 @@ export const useAppStore = create<AppState>()(
       // Intro Reveal State
       isIntroPlaying: true,
       introKey: 0,
+
+      // Audio Auscultation State
+      isAudioEnabled: true,
 
       schema: null,
       patients: [],
@@ -395,6 +402,8 @@ export const useAppStore = create<AppState>()(
       skipIntro: () => {
         set({ isIntroPlaying: false });
       },
+
+      toggleAudio: () => set((state) => ({ isAudioEnabled: !state.isAudioEnabled })),
 
       setDisclaimerAcknowledged: (ack) =>
         set({ disclaimerAcknowledged: ack, isDisclaimerModalOpen: false }),
