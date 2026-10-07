@@ -60,12 +60,12 @@ def get_patient_shap(df: pd.DataFrame, target: str = "CAD"):
         else:
             shap_vals_pos = shap_values[0]
             
-    # Pair feature names with their SHAP values
-    importance_dict = {
-        name: float(val) 
-        for name, val in zip(feature_names, shap_vals_pos)
-    }
-    
+    # Pair feature names with their SHAP values and strip Scikit-Learn prefixes
+    importance_dict = {}
+    for name, val in zip(feature_names, shap_vals_pos):
+        clean_name = name.split("__")[-1]
+        importance_dict[clean_name] = float(val)
+        
     # Sort by absolute impact
     sorted_importance = dict(sorted(importance_dict.items(), key=lambda item: abs(item[1]), reverse=True))
     
@@ -93,13 +93,7 @@ def generate_clinical_narrative(shap_dict: dict, top_k: int = 3) -> str:
         "DLP": "Dyslipidemia"
     }
     
-    clean_dict = {}
-    for k, v in shap_dict.items():
-        clean_name = k.split("__")[-1]
-        if clean_name not in clean_dict:
-             clean_dict[clean_name] = v
-             
-    top_features = list(clean_dict.items())[:top_k]
+    top_features = list(shap_dict.items())[:top_k]
     
     for feat, impact in top_features:
         friendly_name = glossary.get(feat, feat)
