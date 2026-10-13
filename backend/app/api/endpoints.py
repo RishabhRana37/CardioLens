@@ -95,7 +95,7 @@ def _normalize_input_dataframe(data: Dict[str, Any]) -> tuple[pd.DataFrame, list
         
     return df, warnings
 
-@router.get("/health", summary="Health check and loaded models")
+@router.get("/health", summary="Health check and loaded models", tags=["Regulatory & System Health"])
 def health_check():
     """
     Returns API health status, loaded model list, and uptime.
@@ -107,7 +107,7 @@ def health_check():
         "models_loaded": list(models.keys())
     }
 
-@router.get("/schema", summary="Canonical feature schema")
+@router.get("/schema", summary="Canonical feature schema", tags=["Clinical Schema & Patients"])
 def get_schema():
     """
     Returns the full feature metadata schema driving the dynamic clinical input forms.
@@ -116,7 +116,7 @@ def get_schema():
         return SCHEMA_DATA
     raise HTTPException(status_code=500, detail="Feature schema not found.")
 
-@router.get("/patients", summary="List sample patient summaries")
+@router.get("/patients", summary="List sample patient summaries", tags=["Clinical Schema & Patients"])
 def get_patients():
     """
     Returns the list of curated sample patients for instant clinical demonstration.
@@ -137,7 +137,7 @@ def get_patients():
         for p in PATIENTS_DATA
     ]
 
-@router.get("/patients/{patient_id}", summary="Get sample patient detail")
+@router.get("/patients/{patient_id}", summary="Get sample patient detail", tags=["Clinical Schema & Patients"])
 def get_patient(patient_id: int = PathParam(..., description="Patient ID")):
     """
     Returns full feature vector and ground truth for a sample patient.
@@ -147,7 +147,7 @@ def get_patient(patient_id: int = PathParam(..., description="Patient ID")):
             return p
     raise HTTPException(status_code=404, detail=f"Patient {patient_id} not found.")
 
-@router.post("/predict", summary="Predict coronary artery disease risk across all targets")
+@router.post("/predict", summary="Predict coronary artery disease risk across all targets", tags=["Clinical Risk Inference"])
 def predict_risk(payload: PredictRequest) -> Dict[str, Any]:
     """
     Predicts calibrated stenosis probabilities and confidence scores for CAD, LAD, LCX, and RCA.
@@ -212,7 +212,7 @@ def predict_risk(payload: PredictRequest) -> Dict[str, Any]:
         "regulatory_context": SAMD_REGULATORY_METADATA
     }
 
-@router.post("/explain", summary="Generate per-vessel SHAP physiological breakdown")
+@router.post("/explain", summary="Generate per-vessel SHAP physiological breakdown", tags=["Physiological Explainability"])
 def explain_vessel(payload: ExplainRequest) -> Dict[str, Any]:
     """
     Computes per-instance TreeExplainer SHAP contributions and natural-language narrative
@@ -236,7 +236,7 @@ def explain_vessel(payload: ExplainRequest) -> Dict[str, Any]:
     explanation = generate_full_explanation(df, target=target, proba=proba)
     return explanation
 
-@router.get("/metrics", summary="Model performance metrics and ROC curves")
+@router.get("/metrics", summary="Model performance metrics and ROC curves", tags=["Model Trust & Benchmarks"])
 def get_metrics():
     """
     Returns cross-validated metrics, ROC curve asset URLs, and top global feature rankings.
@@ -292,7 +292,7 @@ def get_metrics():
 
     return metrics_data
 
-@router.get("/cohorts", summary="Dual-Cohort clinical validation comparison")
+@router.get("/cohorts", summary="Dual-Cohort clinical validation comparison", tags=["Model Trust & Benchmarks"])
 def get_cohorts():
     """
     Returns the Dual-Cohort benchmark comparing the 303 gold-standard clinical trial
@@ -304,7 +304,7 @@ def get_cohorts():
     with open(comp_file, "r") as f:
         return json.load(f)
 
-@router.get("/compliance", summary="SaMD regulatory positioning and clinical disclaimers")
+@router.get("/compliance", summary="SaMD regulatory positioning and clinical disclaimers", tags=["Regulatory & System Health"])
 def get_compliance():
     """
     Returns formal FDA/EU Non-Diagnostic Clinical Decision Support (CDS) regulatory declarations,
