@@ -55,7 +55,6 @@ binary:
   - LVH
   - Poor R Progression
 nominal: 
-  - Rhythm
   - VHD
 leakage: 
   - LAD

@@ -28,7 +28,16 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         "Region RWMA": "Region with RWMA"
     }
     # Only rename columns that exist in the mapping
-    return df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+    
+    # Map common string binaries to numeric to prevent Random Forest crashes
+    df = df.replace({"Y": 1, "N": 0, "Male": 1, "Fmale": 0})
+    
+    # Fix VHD mixed types (N got replaced by 0)
+    if "VHD" in df.columns:
+        df["VHD"] = df["VHD"].replace({0: "N"}).astype(str)
+    
+    return df
 
 
 def build_X(df: pd.DataFrame) -> pd.DataFrame:
