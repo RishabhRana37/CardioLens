@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 models/*.joblib
 models/plots/*.png
+data/dataset_synthetic_50k.csv

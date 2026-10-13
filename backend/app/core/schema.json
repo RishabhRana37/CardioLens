@@ -1,0 +1,705 @@
+{
+  "total_features": 55,
+  "groups": [
+    "Demographic",
+    "Symptom & Examination",
+    "ECG",
+    "Laboratory & Echo"
+  ],
+  "features": [
+    {
+      "name": "Age",
+      "label": "Age",
+      "type": "numeric",
+      "group": "Demographic",
+      "unit": "years",
+      "min": 30,
+      "max": 86,
+      "default": 58,
+      "modifiable": false,
+      "description": "Patient age in years"
+    },
+    {
+      "name": "Sex",
+      "label": "Sex",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "Female (0)",
+        "Male (1)"
+      ],
+      "default": 1,
+      "modifiable": false,
+      "description": "Biological sex (1=Male, 0=Female)"
+    },
+    {
+      "name": "Weight",
+      "label": "Weight",
+      "type": "numeric",
+      "group": "Demographic",
+      "unit": "kg",
+      "min": 48,
+      "max": 120,
+      "default": 76,
+      "modifiable": true,
+      "description": "Body weight in kilograms"
+    },
+    {
+      "name": "Height",
+      "label": "Height",
+      "type": "numeric",
+      "group": "Demographic",
+      "unit": "cm",
+      "min": 140,
+      "max": 195,
+      "default": 172,
+      "modifiable": false,
+      "description": "Standing height in centimeters"
+    },
+    {
+      "name": "BMI",
+      "label": "BMI",
+      "type": "numeric",
+      "group": "Demographic",
+      "unit": "kg/m²",
+      "min": 18,
+      "max": 42,
+      "default": 25.7,
+      "modifiable": true,
+      "description": "Body Mass Index"
+    },
+    {
+      "name": "DM",
+      "label": "Diabetes Mellitus",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": true,
+      "description": "Documented diabetes mellitus"
+    },
+    {
+      "name": "HTN",
+      "label": "Hypertension",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": true,
+      "description": "Chronic arterial hypertension"
+    },
+    {
+      "name": "Current Smoker",
+      "label": "Current Smoker",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": true,
+      "description": "Active tobacco smoking"
+    },
+    {
+      "name": "Ex-Smoker",
+      "label": "Ex-Smoker",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Previous smoking history"
+    },
+    {
+      "name": "FH",
+      "label": "Family History of CAD",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": false,
+      "description": "Early coronary artery disease in first-degree relative"
+    },
+    {
+      "name": "Obesity",
+      "label": "Obesity Status",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": true,
+      "description": "Clinical obesity (BMI >= 30)"
+    },
+    {
+      "name": "CRF",
+      "label": "Chronic Renal Failure",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Chronic kidney impairment"
+    },
+    {
+      "name": "CVA",
+      "label": "Cerebrovascular Accident",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Prior stroke or transient ischemic attack"
+    },
+    {
+      "name": "Airway disease",
+      "label": "Airway Disease",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Chronic obstructive pulmonary disease or asthma"
+    },
+    {
+      "name": "Thyroid Disease",
+      "label": "Thyroid Disease",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Documented thyroid endocrinopathy"
+    },
+    {
+      "name": "CHF",
+      "label": "Congestive Heart Failure",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Documented heart failure syndrome"
+    },
+    {
+      "name": "DLP",
+      "label": "Dyslipidemia",
+      "type": "binary",
+      "group": "Demographic",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": true,
+      "description": "Serum dyslipidemia"
+    },
+    {
+      "name": "BP",
+      "label": "Systolic Blood Pressure",
+      "type": "numeric",
+      "group": "Symptom & Examination",
+      "unit": "mmHg",
+      "min": 90,
+      "max": 200,
+      "default": 135,
+      "modifiable": true,
+      "description": "Resting systolic blood pressure"
+    },
+    {
+      "name": "PR",
+      "label": "Pulse Rate",
+      "type": "numeric",
+      "group": "Symptom & Examination",
+      "unit": "bpm",
+      "min": 50,
+      "max": 125,
+      "default": 74,
+      "modifiable": true,
+      "description": "Resting heart rate in beats per minute"
+    },
+    {
+      "name": "Edema",
+      "label": "Peripheral Edema",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Dependent lower extremity swelling"
+    },
+    {
+      "name": "Weak Peripheral Pulse",
+      "label": "Weak Peripheral Pulse",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Diminished dorsalis pedis or radial pulse"
+    },
+    {
+      "name": "Lung rales",
+      "label": "Lung Rales / Crackles",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Auscultatory crackles in basal lung fields"
+    },
+    {
+      "name": "Systolic Murmur",
+      "label": "Systolic Murmur",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Systolic cardiac murmur"
+    },
+    {
+      "name": "Diastolic Murmur",
+      "label": "Diastolic Murmur",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Diastolic cardiac murmur"
+    },
+    {
+      "name": "Typical Chest Pain",
+      "label": "Typical Anginal Chest Pain",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": true,
+      "description": "Substernal pressure exacerbated by effort, relieved by rest/nitrates"
+    },
+    {
+      "name": "Dyspnea",
+      "label": "Exertional Dyspnea",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": true,
+      "description": "Shortness of breath on mild to moderate exertion"
+    },
+    {
+      "name": "Function Class",
+      "label": "NYHA Function Class",
+      "type": "ordinal",
+      "group": "Symptom & Examination",
+      "min": 0,
+      "max": 4,
+      "default": 2,
+      "modifiable": true,
+      "description": "New York Heart Association functional classification"
+    },
+    {
+      "name": "Atypical",
+      "label": "Atypical Chest Pain",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Atypical angina presentation"
+    },
+    {
+      "name": "Nonanginal CP",
+      "label": "Non-Anginal Chest Pain",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Pleuritic or musculoskeletal chest pain"
+    },
+    {
+      "name": "Exertional CP",
+      "label": "Exertional Chest Pain",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": true,
+      "description": "Pain occurring strictly upon physical exertion"
+    },
+    {
+      "name": "LowTH Ang",
+      "label": "Low-Threshold Angina",
+      "type": "binary",
+      "group": "Symptom & Examination",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Angina provoked by minimal physical activity"
+    },
+    {
+      "name": "Rhythm",
+      "label": "ECG Rhythm",
+      "type": "nominal",
+      "group": "ECG",
+      "options": [
+        "Sinus (NSR)",
+        "AFib",
+        "Bradycardia",
+        "Tachycardia"
+      ],
+      "default": "Sinus (NSR)",
+      "modifiable": false,
+      "description": "Resting ECG rhythm"
+    },
+    {
+      "name": "Q Wave",
+      "label": "Pathological Q Wave",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Infarct-associated pathologic Q waves"
+    },
+    {
+      "name": "ST Elevation",
+      "label": "ST Segment Elevation",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": false,
+      "description": "Acute epicardial injury ST elevation"
+    },
+    {
+      "name": "ST Depression",
+      "label": "ST Segment Depression",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Subendocardial ischemia ST depression"
+    },
+    {
+      "name": "T inversion",
+      "label": "T Wave Inversion",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 1,
+      "modifiable": false,
+      "description": "Ischemia-related T-wave inversion"
+    },
+    {
+      "name": "LVH",
+      "label": "Left Ventricular Hypertrophy",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Voltage-based LVH criteria"
+    },
+    {
+      "name": "Poor R Progression",
+      "label": "Poor R Wave Progression",
+      "type": "binary",
+      "group": "ECG",
+      "options": [
+        "No (0)",
+        "Yes (1)"
+      ],
+      "default": 0,
+      "modifiable": false,
+      "description": "Anterior chest leads R-wave deficit"
+    },
+    {
+      "name": "FBS",
+      "label": "Fasting Blood Sugar",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 60,
+      "max": 350,
+      "default": 112,
+      "modifiable": true,
+      "description": "Fasting blood glucose"
+    },
+    {
+      "name": "Cr",
+      "label": "Serum Creatinine",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 0.5,
+      "max": 4.5,
+      "default": 1,
+      "modifiable": false,
+      "description": "Serum creatinine level"
+    },
+    {
+      "name": "TG",
+      "label": "Triglycerides",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 40,
+      "max": 600,
+      "default": 175,
+      "modifiable": true,
+      "description": "Serum triglyceride level"
+    },
+    {
+      "name": "LDL",
+      "label": "LDL Cholesterol",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 30,
+      "max": 280,
+      "default": 154,
+      "modifiable": true,
+      "description": "Low-density lipoprotein cholesterol"
+    },
+    {
+      "name": "HDL",
+      "label": "HDL Cholesterol",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 15,
+      "max": 95,
+      "default": 38,
+      "modifiable": true,
+      "description": "High-density lipoprotein cholesterol"
+    },
+    {
+      "name": "BUN",
+      "label": "Blood Urea Nitrogen",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mg/dL",
+      "min": 5,
+      "max": 70,
+      "default": 16,
+      "modifiable": false,
+      "description": "Blood urea nitrogen concentration"
+    },
+    {
+      "name": "ESR",
+      "label": "Erythrocyte Sed. Rate",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mm/hr",
+      "min": 1,
+      "max": 90,
+      "default": 14,
+      "modifiable": false,
+      "description": "Erythrocyte sedimentation rate"
+    },
+    {
+      "name": "HB",
+      "label": "Hemoglobin",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "g/dL",
+      "min": 8,
+      "max": 19,
+      "default": 14.2,
+      "modifiable": false,
+      "description": "Blood hemoglobin concentration"
+    },
+    {
+      "name": "K",
+      "label": "Serum Potassium",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mEq/L",
+      "min": 2.8,
+      "max": 6.2,
+      "default": 4.3,
+      "modifiable": false,
+      "description": "Serum potassium level"
+    },
+    {
+      "name": "Na",
+      "label": "Serum Sodium",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "mEq/L",
+      "min": 125,
+      "max": 152,
+      "default": 140,
+      "modifiable": false,
+      "description": "Serum sodium concentration"
+    },
+    {
+      "name": "WBC",
+      "label": "White Blood Cell Count",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "x10³/µL",
+      "min": 3,
+      "max": 20,
+      "default": 7.2,
+      "modifiable": false,
+      "description": "Total leukocyte count"
+    },
+    {
+      "name": "Lymph",
+      "label": "Lymphocytes",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "%",
+      "min": 5,
+      "max": 60,
+      "default": 30,
+      "modifiable": false,
+      "description": "Differential lymphocyte percentage"
+    },
+    {
+      "name": "Neut",
+      "label": "Neutrophils",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "%",
+      "min": 25,
+      "max": 85,
+      "default": 62,
+      "modifiable": false,
+      "description": "Differential neutrophil percentage"
+    },
+    {
+      "name": "PLT",
+      "label": "Platelet Count",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "x10³/µL",
+      "min": 80,
+      "max": 550,
+      "default": 220,
+      "modifiable": false,
+      "description": "Platelet count"
+    },
+    {
+      "name": "EF-TTE",
+      "label": "Ejection Fraction (EF-TTE)",
+      "type": "numeric",
+      "group": "Laboratory & Echo",
+      "unit": "%",
+      "min": 15,
+      "max": 70,
+      "default": 45,
+      "modifiable": true,
+      "description": "Echocardiographic left ventricular ejection fraction"
+    },
+    {
+      "name": "Region with RWMA",
+      "label": "Regional Wall Motion Abnormality",
+      "type": "ordinal",
+      "group": "Laboratory & Echo",
+      "min": 0,
+      "max": 4,
+      "default": 2,
+      "modifiable": false,
+      "description": "Number of myocardial segments with RWMA"
+    },
+    {
+      "name": "VHD",
+      "label": "Valvular Heart Disease",
+      "type": "nominal",
+      "group": "Laboratory & Echo",
+      "options": [
+        "Normal",
+        "Mild",
+        "Moderate",
+        "Severe"
+      ],
+      "default": "Mild",
+      "modifiable": false,
+      "description": "Valvular dysfunction severity"
+    }
+  ]
+}
