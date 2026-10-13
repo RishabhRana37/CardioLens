@@ -126,6 +126,16 @@ def test_predict_nested():
         assert "confidence" in pred
         assert 0.0 <= pred["probability"] <= 1.0
         assert 0.0 <= pred["confidence"] <= 1.0
+        assert "confidence_interval_95" in pred
+        assert len(pred["confidence_interval_95"]) == 2
+        assert "uncertainty_std" in pred
+        assert "uncertainty_level" in pred
+        assert pred["uncertainty_level"] in ["low", "moderate", "elevated"]
+
+    assert "data_quality" in data
+    assert data["data_quality"]["is_in_distribution"] is True
+    assert "regulatory_context" in data
+    assert "device_classification" in data["regulatory_context"]
 
 def test_predict_flat():
     # Direct format: { "Age": 62, ... }
@@ -209,4 +219,29 @@ def test_cohorts_endpoint():
     assert data["primary_cohort"]["size"] == 303
     assert data["simulation_cohort"]["size"] == 50000
     assert "summary" in data
+
+def test_compliance_endpoint():
+    res = client.get("/api/v1/compliance")
+    assert res.status_code == 200
+    data = res.json()
+    assert "device_classification" in data
+    assert "clinical_disclaimer" in data
+    assert "anti_leakage_guarantee" in data
+
+def test_sensor_outlier_detection():
+    # Send impossible sensor values (e.g. BP=350, Age=150)
+    res = client.post("/api/v1/predict", json={
+        "features": {
+            "Age": 150,
+            "BP": 350,
+            "EF-TTE": 50
+        }
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert "data_quality" in data
+    assert data["data_quality"]["is_in_distribution"] is False
+    assert len(data["data_quality"]["extreme_biomarkers"]) >= 2
+    assert len(data["warnings"]) > 0
+
 

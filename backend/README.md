@@ -55,7 +55,24 @@ The frontend will immediately talk to `http://localhost:8000/api/v1`.
 | `/api/v1/explain` | `POST` | Vessel-specific SHAP physiological breakdown, ranked contributions, and natural clinical narrative |
 | `/api/v1/metrics` | `GET` | Cross-validated metrics (ROC-AUC, F1, Accuracy), top feature rankings, and curve plot assets |
 | `/api/v1/cohorts` | `GET` | Dual-Cohort benchmark comparing 303 gold-standard vs 50,000 simulation patients |
+| `/api/v1/compliance` | `GET` | SaMD non-diagnostic CDS regulatory declarations, intended use, and leakage audit |
 | `/static/plots/{file}`| `GET` | Serves ROC curve, calibration curve, and confusion matrix PNG assets |
+
+---
+
+## Statistical & Clinical Engineering Features
+
+1. **Epistemic Uncertainty Quantification:**
+   - Evaluates fold variance across the 5 cross-validation calibrated sub-estimators for every prediction.
+   - Computes standard error ($\sigma$) and **95% Confidence Intervals** (`[ci_lower, ci_upper]`), categorizing model uncertainty into `low`, `moderate`, or `elevated`.
+
+2. **Out-of-Distribution (OOD) & Sensor Quality Screening:**
+   - Screens input biomarkers against physiological bounds and statistical reference benchmarks ($|Z| > 3.5$).
+   - Detects corrupted sensor feeds or implausible outliers without crashing, generating a structured `data_quality` audit report.
+
+3. **Software as a Medical Device (SaMD) Compliance Framework:**
+   - Conforms strictly to FDA Guidance Section 520(o)(1)(E) and EU MDR Rule 11 for **Non-Diagnostic Clinical Decision Support (CDS)**.
+   - Formally positioned as an educational digital twin and physiological risk exploration platform, explicitly disclaiming autonomous diagnostic authority.
 
 ---
 

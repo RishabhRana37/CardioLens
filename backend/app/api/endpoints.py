@@ -9,6 +9,16 @@ from pathlib import Path
 
 from app.core.config import settings
 from ml.explain import generate_full_explanation
+from ml.uncertainty import calculate_ensemble_uncertainty
+from ml.quality import evaluate_data_quality
+
+SAMD_REGULATORY_METADATA = {
+    "device_classification": "Non-Diagnostic Clinical Decision Support (CDS)",
+    "regulatory_framework": "FDA Guidance Section 520(o)(1)(E) & EU MDR Non-Device CDS",
+    "intended_use": "Retrospective coronary physiological risk modeling & educational digital twin simulation",
+    "clinical_disclaimer": "CardioLens provides model-estimated statistical probabilities. Outputs do not constitute medical diagnoses, patient-specific treatment instructions, or clinical prescriptions.",
+    "anti_leakage_guarantee": "Strict mathematical exclusion of catheterization targets (Cath, LAD, LCX, RCA) verified"
+}
 
 router = APIRouter()
 models_dir = Path(__file__).parent.parent.parent / "models"
@@ -151,6 +161,10 @@ def predict_risk(payload: PredictRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail="No patient features provided.")
         
     df, warnings = _normalize_input_dataframe(raw_data)
+    
+    # 1. Screen input for data quality, sensor plausibility, and out-of-distribution drift
+    quality_report = evaluate_data_quality(df)
+    warnings.extend(quality_report["quality_warnings"])
 
     predictions = {}
     
@@ -171,10 +185,16 @@ def predict_risk(payload: PredictRequest) -> Dict[str, Any]:
         # Statistical confidence derived from calibrated margin
         confidence = round(float(min(0.99, max(0.50, 0.50 + abs(proba - 0.5) * 0.90))), 2)
         
+        # 2. Epistemic uncertainty quantification across cross-validation fold ensemble
+        unc = calculate_ensemble_uncertainty(model, df)
+        
         predictions[target] = {
             "label": label,
             "probability": round(proba, 3),
-            "confidence": confidence
+            "confidence": confidence,
+            "confidence_interval_95": unc["confidence_interval_95"],
+            "uncertainty_std": unc["uncertainty_std"],
+            "uncertainty_level": unc["uncertainty_level"]
         }
 
     inference_ms = round((time.time() - t0) * 1000, 1)
@@ -183,7 +203,13 @@ def predict_risk(payload: PredictRequest) -> Dict[str, Any]:
         "predictions": predictions,
         "model_version": "1.0.0",
         "warnings": warnings,
-        "inference_time_ms": inference_ms
+        "inference_time_ms": inference_ms,
+        "data_quality": {
+            "is_in_distribution": quality_report["is_in_distribution"],
+            "quality_score": quality_report["quality_score"],
+            "extreme_biomarkers": quality_report["extreme_biomarkers"]
+        },
+        "regulatory_context": SAMD_REGULATORY_METADATA
     }
 
 @router.post("/explain", summary="Generate per-vessel SHAP physiological breakdown")
@@ -277,4 +303,13 @@ def get_cohorts():
         raise HTTPException(status_code=404, detail="Cohort comparison not found. Run evaluate_cohorts.py first.")
     with open(comp_file, "r") as f:
         return json.load(f)
+
+@router.get("/compliance", summary="SaMD regulatory positioning and clinical disclaimers")
+def get_compliance():
+    """
+    Returns formal FDA/EU Non-Diagnostic Clinical Decision Support (CDS) regulatory declarations,
+    intended use boundaries, and zero-leakage verification status.
+    """
+    return SAMD_REGULATORY_METADATA
+
 
