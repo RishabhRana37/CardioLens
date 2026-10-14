@@ -10,11 +10,13 @@ import {
 interface CoronaryTreeSchematicProps {
   className?: string;
   showTitle?: boolean;
+  variant?: 'default' | 'split';
 }
 
 export const CoronaryTreeSchematic: React.FC<CoronaryTreeSchematicProps> = ({
   className = '',
   showTitle = true,
+  variant = 'default',
 }) => {
   const {
     predictions,
@@ -51,35 +53,45 @@ export const CoronaryTreeSchematic: React.FC<CoronaryTreeSchematicProps> = ({
     }
   };
 
+  const isSplit = variant === 'split';
+
   return (
     <div
-      className={`relative rounded-2xl bg-slate-950/85 border border-white/10 p-3.5 backdrop-blur-xl shadow-glass-md flex flex-col font-mono text-slate-100 select-none transition-all ${className}`}
+      className={`relative rounded-2xl bg-slate-950/85 border border-white/10 p-3.5 sm:p-4 backdrop-blur-xl shadow-glass-md flex flex-col font-mono text-slate-100 select-none transition-all ${className}`}
     >
       {/* Top Header */}
       {showTitle && (
-        <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-2.5">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-teal-950 border border-teal-500/40 flex items-center justify-center text-teal-300 shadow-glow-teal">
-              <GitBranch className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-lg bg-teal-950 border border-teal-500/40 flex items-center justify-center text-teal-300 shadow-glow-teal shrink-0">
+              <GitBranch className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                2D Coronary Tree Map
+              <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200 block">
+                {isSplit ? '2D Coronary Angiogram Map' : '2D Coronary Tree Map'}
               </span>
               <span className="text-[10px] text-slate-400 block font-sans">
-                Cath-Lab Standard Angiographic Schematic
+                {isSplit ? 'Cath-Lab AHA 15-Segment Angiographic Schematic' : 'Cath-Lab Standard Angiographic Schematic'}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* Live 3D Synchronization Status Pill */}
+            {isSplit && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-950/80 border border-teal-500/40 text-[10px] text-teal-300 font-semibold shadow-xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                <span>3D Synced</span>
+              </div>
+            )}
+
             {/* Whole CAD Overview Toggle */}
             <button
               type="button"
               onClick={() => selectVessel(null)}
-              className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all ${
                 selectedVessel === null
-                  ? 'bg-slate-800 border-teal-400 text-teal-300 shadow-glow-teal'
+                  ? 'bg-slate-800 border-teal-400 text-teal-300 shadow-glow-teal ring-1 ring-teal-400/40'
                   : 'bg-slate-900/60 border-white/10 text-slate-400 hover:text-white'
               }`}
               title="Select CAD Whole Heart Overview"
@@ -91,10 +103,10 @@ export const CoronaryTreeSchematic: React.FC<CoronaryTreeSchematicProps> = ({
       )}
 
       {/* SVG Coronary Tree Graphic Viewport */}
-      <div className="relative w-full flex items-center justify-center my-auto min-h-[220px]">
+      <div className={`relative w-full flex items-center justify-center my-auto ${isSplit ? 'min-h-[240px] flex-1 py-1' : 'min-h-[220px]'}`}>
         <svg
           viewBox="0 0 460 330"
-          className="w-full h-auto max-h-[300px] overflow-visible drop-shadow-xl"
+          className={`w-full h-auto ${isSplit ? 'max-h-[340px] xl:max-h-[380px]' : 'max-h-[300px]'} overflow-visible drop-shadow-xl`}
         >
           <defs>
             {/* Glow Filters for Vessels */}
@@ -531,14 +543,83 @@ export const CoronaryTreeSchematic: React.FC<CoronaryTreeSchematicProps> = ({
       </div>
 
       {/* Selected Vessel Context Footer */}
-      {activeVessel && activeVessel !== 'CAD' && (
-        <div className="mt-2 p-2 rounded-xl bg-slate-900/60 border border-white/5 text-[10px] flex items-center justify-between text-slate-300">
-          <div className="flex items-center gap-1.5">
-            <Activity className="w-3 h-3 text-teal-400" />
-            <span className="font-bold text-slate-200">{VESSELS[activeVessel as VesselKey].name} Artery:</span>
-            <span className="text-slate-400">{VESSELS[activeVessel as VesselKey].label}</span>
+      {activeVessel && activeVessel !== 'CAD' ? (
+        <div className="mt-2.5 p-2.5 rounded-xl bg-slate-900/80 border border-teal-500/30 text-xs text-slate-300 shadow-md">
+          <div className="flex items-center justify-between pb-1.5 border-b border-white/5">
+            <div className="flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-teal-400" />
+              <span className="font-bold text-slate-100">{VESSELS[activeVessel as VesselKey].name} Artery:</span>
+              <span className="text-slate-300 font-sans">{VESSELS[activeVessel as VesselKey].label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded font-mono"
+                style={{
+                  backgroundColor: `${riskGradient(getProb(activeVessel))}22`,
+                  color: riskGradient(getProb(activeVessel)),
+                  border: `1px solid ${riskGradient(getProb(activeVessel))}55`,
+                }}
+              >
+                Stenosis {(getProb(activeVessel) * 100).toFixed(0)}%
+              </span>
+              <span className="text-teal-300 text-[10px] font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+                3D Synced
+              </span>
+            </div>
           </div>
-          <span className="text-teal-300 italic">3D Synced</span>
+          <div className="text-[11px] text-slate-400 font-sans pt-1.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+            <span>
+              <strong className="text-slate-300 font-mono text-[10px] uppercase">Territory:</strong>{' '}
+              {VESSELS[activeVessel as VesselKey].anatomicalTerritory}
+            </span>
+            <span className="text-slate-400 text-[10px] italic">
+              {VESSELS[activeVessel as VesselKey].description}
+            </span>
+          </div>
+        </div>
+      ) : isSplit ? (
+        <div className="mt-2.5 p-2.5 rounded-xl bg-slate-900/50 border border-white/5 text-xs text-slate-300 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cadColor }} />
+            <div>
+              <span className="font-bold text-slate-200">Global CAD Assessment:</span>{' '}
+              <span className="text-slate-400 text-[11px] font-sans">
+                Whole-organ coronary network overview. Click any vessel to isolate in 3D.
+              </span>
+            </div>
+          </div>
+          <span
+            className="text-[10px] font-bold px-2 py-0.5 rounded font-mono shrink-0"
+            style={{
+              backgroundColor: `${cadColor}22`,
+              color: cadColor,
+              border: `1px solid ${cadColor}55`,
+            }}
+          >
+            CAD {(cadProb * 100).toFixed(0)}%
+          </span>
+        </div>
+      ) : null}
+
+      {/* Plaque Stenosis Severity Reference Legend */}
+      {isSplit && (
+        <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span className="text-slate-400">Plaque Severity:</span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>&lt;33% Low</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              <span>33–69% Plaque</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>&ge;70% Severe</span>
+            </span>
+          </div>
         </div>
       )}
     </div>

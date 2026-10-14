@@ -12,11 +12,15 @@ import { motion } from 'framer-motion';
 interface MinimalPersistentHUDProps {
   onToggleDetails: () => void;
   isDetailsOpen: boolean;
+  position?: 'fixed' | 'absolute';
+  className?: string;
 }
 
 export const MinimalPersistentHUD: React.FC<MinimalPersistentHUDProps> = ({
   onToggleDetails,
   isDetailsOpen,
+  position = 'fixed',
+  className = '',
 }) => {
   const {
     predictions,
@@ -45,7 +49,9 @@ export const MinimalPersistentHUD: React.FC<MinimalPersistentHUDProps> = ({
   const strokeDashoffset = circumference - cadProb * circumference;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none max-w-[95vw]">
+    <div
+      className={`${position} bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none max-w-[95vw] ${className}`}
+    >
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{

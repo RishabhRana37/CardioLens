@@ -20,12 +20,16 @@ function computeCanonicalFraming(
   height: number,
   camera: THREE.PerspectiveCamera,
   hasRightPanel: boolean,
-  isFocusMode: boolean
+  isFocusMode: boolean,
+  isSplitView: boolean = false
 ) {
   // Offsets for floating translucent glass chrome (in pixels)
-  const topOffset = isFocusMode ? 0 : 64; // TopBar height
-  const bottomOffset = isFocusMode ? 0 : 88; // FloatingControlDock height
-  const rightOffset = isFocusMode ? 0 : hasRightPanel ? Math.min(460, width * 0.38) : 0;
+  // In Split View, TopBar is outside the Canvas container. The minimal HUD is at bottom (~54px).
+  const topOffset = isSplitView ? 14 : (isFocusMode ? 0 : 64);
+  const bottomOffset = isSplitView ? 58 : (isFocusMode ? 0 : 88);
+  const rightOffset = isSplitView
+    ? (hasRightPanel ? Math.min(320, width * 0.4) : 0)
+    : (isFocusMode ? 0 : hasRightPanel ? Math.min(460, width * 0.38) : 0);
   const leftOffset = 0;
 
   const freeWidth = Math.max(200, width - leftOffset - rightOffset);
@@ -37,22 +41,23 @@ function computeCanonicalFraming(
   const boxSize = box.getSize(new THREE.Vector3());
   const boxCenter = box.getCenter(new THREE.Vector3());
 
-  // Organ dimensions (ensuring a safe minimum)
-  const organH = Math.max(0.6, boxSize.y);
-  const organW = Math.max(0.6, boxSize.x);
+  // Organ dimensions (ensuring a calibrated clinical bounding box including great vessels)
+  const organH = Math.max(2.4, boxSize.y);
+  const organW = Math.max(2.2, boxSize.x);
 
   const fovRad = (camera.fov * Math.PI) / 180;
   const aspect = width / height;
 
-  // We want the whole organ (including great vessels) to fill ~67% (65-70%) of the free vertical height,
-  // leaving ~16.5% headroom at the top!
-  const targetVerticalFill = 0.67;
+  // In Split View, the container is narrower (aspect ~1.0-1.2), so we use a more conservative fill
+  // (54% vertical, 58% horizontal) so aorta arch, apex, and 3D labels are never cramped or cropped!
+  const targetVerticalFill = isSplitView ? 0.54 : 0.67;
   const reqFrustumHeight = organH / targetVerticalFill;
   const distY = reqFrustumHeight / (2 * Math.tan(fovRad / 2));
 
-  // Ensure horizontal fit in free width (filling at most ~70% of free width)
+  // Ensure horizontal fit in free width
+  const targetHorizontalFill = isSplitView ? 0.58 : 0.70;
   const freeFrustumWidthRatio = freeWidth / width;
-  const distX = organW / (0.70 * 2 * Math.tan(fovRad / 2) * aspect * freeFrustumWidthRatio);
+  const distX = organW / (targetHorizontalFill * 2 * Math.tan(fovRad / 2) * aspect * freeFrustumWidthRatio);
 
   const distance = Math.max(distY, distX);
 
@@ -65,9 +70,9 @@ function computeCanonicalFraming(
   const targetZ = boxCenter.z;
 
   const targetLookAt = new THREE.Vector3(targetX, targetY, targetZ);
-  const targetCamPos = new THREE.Vector3(targetX, targetY + 0.08, targetZ + distance);
+  const targetCamPos = new THREE.Vector3(targetX, targetY + (isSplitView ? 0.04 : 0.08), targetZ + distance);
 
-  return { targetCamPos, targetLookAt, distance, targetX, targetY, targetZ };
+  return { targetCamPos, targetLookAt, distance, targetX, targetY, targetZ, aspect, isSplitView };
 }
 
 function getHeartBounds(): THREE.Box3 {
@@ -96,6 +101,7 @@ export const CameraController: React.FC = () => {
     isFocusMode,
     hasActiveDrawer,
     cameraResetTrigger,
+    activeSection,
   } = useAppStore();
   const { camera, size } = useThree();
 
@@ -107,6 +113,8 @@ export const CameraController: React.FC = () => {
     targetX: number;
     targetY: number;
     targetZ: number;
+    aspect: number;
+    isSplitView: boolean;
   }>({
     targetCamPos: new THREE.Vector3(0, 0.08, 4.4),
     targetLookAt: new THREE.Vector3(0, 0, 0),
@@ -114,6 +122,8 @@ export const CameraController: React.FC = () => {
     targetX: 0,
     targetY: 0,
     targetZ: 0,
+    aspect: 1.6,
+    isSplitView: false,
   });
 
   // Target camera position and lookAt vector
@@ -137,19 +147,21 @@ export const CameraController: React.FC = () => {
   const updateCanonicalFraming = useCallback(() => {
     const box = getHeartBounds();
     const pCamera = camera as THREE.PerspectiveCamera;
+    const isSplit = activeSection === 'split';
     const framing = computeCanonicalFraming(
       box,
       size.width,
       size.height,
       pCamera,
       hasActiveDrawer,
-      isFocusMode
+      isFocusMode,
+      isSplit
     );
     canonicalHomeRef.current = framing;
     return framing;
-  }, [camera, size.width, size.height, hasActiveDrawer, isFocusMode]);
+  }, [camera, size.width, size.height, hasActiveDrawer, isFocusMode, activeSection]);
 
-  // Compute on mount and on every resize or overlay/focus mode change
+  // Compute on mount and on every resize or overlay/focus mode/section change
   useEffect(() => {
     const framing = updateCanonicalFraming();
 
@@ -159,7 +171,7 @@ export const CameraController: React.FC = () => {
       targetLookAt.current.copy(framing.targetLookAt);
       isTransitioning.current = true;
     }
-  }, [updateCanonicalFraming, selectedVessel, cameraPreset, isIntroPlaying]);
+  }, [updateCanonicalFraming, selectedVessel, cameraPreset, isIntroPlaying, activeSection]);
 
   // Reset intro start time when introKey changes
   useEffect(() => {
@@ -186,17 +198,30 @@ export const CameraController: React.FC = () => {
 
     if (selectedVessel && selectedVessel !== 'CAD') {
       const vConfig = VESSELS[selectedVessel as VesselKey];
-      const { targetX, targetY } = canonicalHomeRef.current;
-      // Offset vessel camera by visual center shift
+      const { targetX, targetY, isSplitView } = canonicalHomeRef.current;
+      
+      // Compute viewing direction vector from vessel targetLookAt to configured camera position
+      const dirX = vConfig.camera[0] - vConfig.targetLookAt[0];
+      const dirY = vConfig.camera[1] - vConfig.targetLookAt[1];
+      const dirZ = vConfig.camera[2] - vConfig.targetLookAt[2];
+      const len = Math.sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ) || 1;
+      const ndx = dirX / len;
+      const ndy = dirY / len;
+      const ndz = dirZ / len;
+
+      // In Split View, calibrated camera distance of 4.1 preserves surrounding anatomical context
+      // without over-zooming or cropping the vessel; Full View uses 3.2.
+      const inspectDistance = isSplitView ? 4.1 : 3.2;
+
+      const tX = vConfig.targetLookAt[0] + targetX;
+      const tY = vConfig.targetLookAt[1] + targetY;
+      const tZ = vConfig.targetLookAt[2];
+
+      targetLookAt.current.set(tX, tY, tZ);
       targetCamPos.current.set(
-        vConfig.camera[0] + targetX,
-        vConfig.camera[1] + targetY,
-        vConfig.camera[2]
-      );
-      targetLookAt.current.set(
-        vConfig.targetLookAt[0] + targetX,
-        vConfig.targetLookAt[1] + targetY,
-        vConfig.targetLookAt[2]
+        tX + ndx * inspectDistance,
+        tY + ndy * inspectDistance,
+        tZ + ndz * inspectDistance
       );
       isTransitioning.current = true;
     } else if (!cameraPreset) {
@@ -205,7 +230,7 @@ export const CameraController: React.FC = () => {
       targetLookAt.current.copy(framing.targetLookAt);
       isTransitioning.current = true;
     }
-  }, [selectedVessel, cameraPreset, isIntroPlaying]);
+  }, [selectedVessel, cameraPreset, isIntroPlaying, activeSection]);
 
   // Handle camera presets (Anterior, Posterior, LAO, RAO, Apical)
   useEffect(() => {
