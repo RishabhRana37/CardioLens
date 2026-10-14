@@ -126,14 +126,14 @@ export const TopBar: React.FC = () => {
     <header className="sticky top-0 z-40 border-b border-glass-border bg-slate-950/85 backdrop-blur-xl px-3 sm:px-5 py-2.5 transition-colors">
       <div className="flex items-center justify-between gap-3">
         {/* 1. Left: Brand Logotype + Tagline & Patient Context Chip */}
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Brand Logo + Tagline */}
           <CardioLogo size="sm" showText={true} showTagline={true} />
 
           <div className="hidden sm:block h-6 w-[1px] bg-white/10" />
 
           {/* Patient Chip */}
-          <div className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-white/10 hover:border-teal-500/40 text-xs shadow-glass-sm transition-all group">
+          <div className="relative flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-white/10 hover:border-teal-500/40 text-xs shadow-glass-sm transition-all group">
             {patientSummary ? (
               <>
                 <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
@@ -142,7 +142,7 @@ export const TopBar: React.FC = () => {
                   value={currentPatientId || ''}
                   onChange={(e) => loadSample(Number(e.target.value))}
                   disabled={isPredicting}
-                  className="bg-transparent text-slate-200 font-medium text-xs focus:outline-none cursor-pointer pr-1 appearance-none max-w-[130px] sm:max-w-[180px] truncate"
+                  className="bg-transparent text-slate-200 font-medium text-xs focus:outline-none cursor-pointer pr-1 appearance-none max-w-[105px] sm:max-w-[135px] xl:max-w-[180px] truncate"
                 >
                   {patients.map((p) => (
                     <option key={p.id} value={p.id} className="bg-slate-950 text-slate-100 py-1">
@@ -185,7 +185,7 @@ export const TopBar: React.FC = () => {
               setActiveSection('heart');
               setDetailsOpen(false);
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
               activeSection === 'heart' && (!isDetailsOpen || activeDetailsSection === null)
                 ? 'bg-teal-600 text-white shadow-xs font-bold ring-1 ring-teal-400/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -199,28 +199,30 @@ export const TopBar: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveSection('inputs')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
               activeSection === 'inputs'
                 ? 'bg-teal-600 text-white shadow-xs font-bold ring-1 ring-teal-400/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
             <FileText className="w-3.5 h-3.5 text-teal-400" />
-            <span>Patient Input</span>
+            <span className="hidden xl:inline">Patient Input</span>
+            <span className="hidden md:inline xl:hidden">Input</span>
           </button>
 
           {/* Tab 3: Split View */}
           <button
             type="button"
             onClick={() => setActiveSection('split')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-all ${
               activeSection === 'split'
                 ? 'bg-teal-600 text-white shadow-xs font-bold ring-1 ring-teal-400/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
             <Columns className="w-3.5 h-3.5 text-teal-400" />
-            <span>Split View</span>
+            <span className="hidden xl:inline">Split View</span>
+            <span className="hidden md:inline xl:hidden">Split</span>
           </button>
 
           {/* Tab 4: "More ▾" Dropdown Menu */}
@@ -308,16 +310,16 @@ export const TopBar: React.FC = () => {
         </nav>
 
         {/* 3. Right: Model Trust, Disclaimer, and Settings Gear (⚙ ▾) */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Model Trust Button (Credibility) */}
           <button
             type="button"
             onClick={openModelTrust}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-950/70 border border-teal-500/40 text-teal-300 hover:bg-teal-900/80 transition-colors text-xs font-mono font-medium shadow-xs group"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-teal-950/70 border border-teal-500/40 text-teal-300 hover:bg-teal-900/80 transition-colors text-xs font-mono font-medium shadow-xs group"
             title="Inspect 10-fold cross-validation metrics, ROC curves, calibration, and global SHAP hierarchy"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline text-[11px] font-bold">Model Trust</span>
+            <span className="hidden xl:inline text-[11px] font-bold">Model Trust</span>
             <span className="text-[9px] px-1 py-0.2 rounded bg-teal-900/90 text-teal-200 border border-teal-500/30 font-bold">
               AUC 0.94
             </span>
@@ -327,12 +329,11 @@ export const TopBar: React.FC = () => {
           <button
             type="button"
             onClick={openDisclaimerModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 transition-colors text-xs font-medium shadow-sm group"
+            className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 transition-colors text-xs font-medium shadow-sm group"
             title="Read clinical safety disclaimer"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline text-[11px] font-semibold">Disclaimer</span>
-            <span className="sm:hidden text-[10px]">⚠</span>
+            <span className="hidden xl:inline text-[11px] font-semibold">Disclaimer</span>
           </button>
 
           {/* Settings Gear Popover (⚙ ▾) */}

@@ -12,6 +12,15 @@ import {
 } from 'lucide-react';
 
 export const StateDebugPanel: React.FC = () => {
+  // Strictly gated behind ?debug=1 URL flag so it NEVER appears in standard/demo views
+  const isDebugMode =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('debug') === '1';
+
+  if (!isDebugMode) {
+    return null;
+  }
+
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [activeSubtab, setActiveSubtab] = useState<'predictions' | 'shap' | 'features' | 'patients'>('predictions');
 

@@ -97,7 +97,7 @@ export const CardioLogo: React.FC<CardioLogoProps> = ({
           </div>
 
           {showTagline && (
-            <span className={`text-slate-400 font-medium tracking-normal ${tagClass}`}>
+            <span className={`hidden xl:inline text-slate-400 font-medium tracking-normal ${tagClass}`}>
               See the risk. <span className="text-teal-400 font-semibold">See why.</span>
             </span>
           )}

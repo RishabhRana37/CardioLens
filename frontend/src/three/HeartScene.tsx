@@ -20,8 +20,6 @@ import {
 import { heartbeatAudio } from '../audio/heartbeatAudio';
 
 export const HeartScene: React.FC = () => {
-  const [isBeating, setIsBeating] = useState<boolean>(true);
-  const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
   const [isModelReady, setIsModelReady] = useState<boolean>(false);
   const [modelNodes, setModelNodes] = useState<InspectedNodeInfo[]>([]);
   const [detectedMode, setDetectedMode] = useState<ModelMode>('MODE_A');
@@ -45,6 +43,11 @@ export const HeartScene: React.FC = () => {
     isFocusMode,
     toggleFocusMode,
     setFocusMode,
+    isBeating,
+    toggleBeating,
+    isInspectorOpen,
+    setInspectorOpen,
+    toggleInspector,
   } = useAppStore();
 
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
@@ -102,11 +105,11 @@ export const HeartScene: React.FC = () => {
         toggleCompareMode();
       }
       if (e.key === 'i' || e.key === 'I') {
-        setIsInspectorOpen((prev) => !prev);
+        toggleInspector();
       }
       if (e.key === ' ') {
         e.preventDefault();
-        setIsBeating((prev) => !prev);
+        toggleBeating();
       }
     };
 
@@ -122,6 +125,8 @@ export const HeartScene: React.FC = () => {
     isFocusMode,
     toggleFocusMode,
     setFocusMode,
+    toggleInspector,
+    toggleBeating,
   ]);
 
   return (
@@ -195,7 +200,7 @@ export const HeartScene: React.FC = () => {
       {/* Dev-Only Model Inspector Overlay (Key: I) */}
       <ModelInspectorOverlay
         isOpen={isInspectorOpen}
-        onClose={() => setIsInspectorOpen(false)}
+        onClose={() => setInspectorOpen(false)}
         nodes={modelNodes}
         detectedMode={detectedMode}
         selectedNodeId={selectedInspectorNodeId}

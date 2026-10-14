@@ -152,8 +152,10 @@ export const AppLayout: React.FC = () => {
       {/* Interactive Clinical Onboarding Coachmarks */}
       <OnboardingCoachMarks />
 
-      {/* Interactive State Debug Panel (Hidden in Heart Stage and Split View) */}
-      {!isFocusMode && !isHeartView && !isSplitView && <StateDebugPanel />}
+      {/* Dev-Only State & Mock Engine Debugger (Strictly gated behind ?debug=1) */}
+      {!isFocusMode && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
+        <StateDebugPanel />
+      )}
     </div>
   );
 };

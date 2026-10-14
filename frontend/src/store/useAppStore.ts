@@ -79,6 +79,14 @@ export interface AppState {
   setProjectionMode: (active: boolean) => void;
   setProjectionPredictions: (preds: Record<Target, Prediction> | null) => void;
 
+  // 3D Cardiac Motion & Inspector State
+  isBeating: boolean;
+  toggleBeating: () => void;
+  setIsBeating: (beating: boolean) => void;
+  isInspectorOpen: boolean;
+  toggleInspector: () => void;
+  setInspectorOpen: (open: boolean) => void;
+
   // Intro Reveal Animation State
   isIntroPlaying: boolean;
   introKey: number;
@@ -138,6 +146,8 @@ export const useAppStore = create<AppState>()(
       activeDetailsSection: null,
       cameraResetTrigger: 0,
       cameraPreset: null,
+      isBeating: true,
+      isInspectorOpen: false,
       activeSection: 'heart',
       activeMobileTab: 'heart',
       isInitialized: false,
@@ -431,6 +441,12 @@ export const useAppStore = create<AppState>()(
       },
 
       toggleAudio: () => set((state) => ({ isAudioEnabled: !state.isAudioEnabled })),
+
+      toggleBeating: () => set((state) => ({ isBeating: !state.isBeating })),
+      setIsBeating: (beating) => set({ isBeating: beating }),
+
+      toggleInspector: () => set((state) => ({ isInspectorOpen: !state.isInspectorOpen })),
+      setInspectorOpen: (open) => set({ isInspectorOpen: open }),
 
       setDisclaimerAcknowledged: (ack) =>
         set({ disclaimerAcknowledged: ack, isDisclaimerModalOpen: false }),
