@@ -45,9 +45,23 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
     setCameraPreset,
     isAngiogramMode,
     toggleAngiogramMode,
+    activeDetailsSection,
   } = useAppStore();
 
-  const [expandedSection, setExpandedSection] = useState<'whatif' | 'projection' | 'tree' | 'cohort' | 'atlas' | null>(null);
+  const [expandedSection, setExpandedSection] = useState<'whatif' | 'projection' | 'tree' | 'cohort' | 'atlas' | null>(activeDetailsSection);
+
+  useEffect(() => {
+    if (activeDetailsSection) {
+      setExpandedSection(activeDetailsSection);
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`details-section-${activeDetailsSection}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [activeDetailsSection]);
 
   // Close on Escape key
   useEffect(() => {
@@ -229,7 +243,7 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
                 </div>
 
                 {/* Live What-If Twin Simulation */}
-                <div className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
+                <div id="details-section-whatif" className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
                   <button
                     type="button"
                     onClick={() => setExpandedSection(expandedSection === 'whatif' ? null : 'whatif')}
@@ -255,7 +269,7 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
                 </div>
 
                 {/* 5-Year Horizon Longitudinal Forecast */}
-                <div className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
+                <div id="details-section-projection" className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
                   <button
                     type="button"
                     onClick={() => setExpandedSection(expandedSection === 'projection' ? null : 'projection')}
@@ -281,7 +295,7 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
                 </div>
 
                 {/* 2D Cath-Lab Coronary Tree Schematic */}
-                <div className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
+                <div id="details-section-tree" className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
                   <button
                     type="button"
                     onClick={() => setExpandedSection(expandedSection === 'tree' ? null : 'tree')}
@@ -307,7 +321,7 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
                 </div>
 
                 {/* Population Cohort Benchmarks */}
-                <div className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
+                <div id="details-section-cohort" className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
                   <button
                     type="button"
                     onClick={() => setExpandedSection(expandedSection === 'cohort' ? null : 'cohort')}
@@ -333,7 +347,7 @@ export const DetailsSlideOverPanel: React.FC<DetailsSlideOverPanelProps> = ({
                 </div>
 
                 {/* Anatomy Atlas & BodyParts3D Reference */}
-                <div className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
+                <div id="details-section-atlas" className="rounded-2xl bg-slate-900/60 border border-white/10 overflow-hidden shadow-md">
                   <button
                     type="button"
                     onClick={() => setExpandedSection(expandedSection === 'atlas' ? null : 'atlas')}

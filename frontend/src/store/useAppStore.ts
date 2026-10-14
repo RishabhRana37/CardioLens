@@ -15,6 +15,7 @@ export type GraphicQuality = 'cinematic' | 'balanced' | 'performance';
 export type AppTheme = 'dark' | 'light';
 export type MobileTab = 'heart' | 'inputs' | 'results';
 export type AppSection = 'heart' | 'inputs' | 'metrics' | 'split';
+export type DetailsSubSection = 'whatif' | 'projection' | 'tree' | 'cohort' | 'atlas' | null;
 
 export interface AppState {
   // Application Settings & System Preferences (Persisted)
@@ -31,6 +32,8 @@ export interface AppState {
   isProjectionMode: boolean;
   isFocusMode: boolean;
   hasActiveDrawer: boolean;
+  isDetailsOpen: boolean;
+  activeDetailsSection: DetailsSubSection;
   cameraResetTrigger: number;
   cameraPreset: 'anterior' | 'posterior' | 'left' | 'right' | 'apical' | null;
   activeSection: AppSection;
@@ -108,6 +111,9 @@ export interface AppState {
   closeModelTrust: () => void;
   setActiveSection: (section: AppSection) => void;
   setActiveMobileTab: (tab: MobileTab) => void;
+  setDetailsOpen: (open: boolean) => void;
+  toggleDetailsOpen: () => void;
+  openDetailsSection: (section: DetailsSubSection) => void;
   clearPatient: () => void;
 }
 
@@ -128,6 +134,8 @@ export const useAppStore = create<AppState>()(
       isProjectionMode: false,
       isFocusMode: false,
       hasActiveDrawer: false,
+      isDetailsOpen: false,
+      activeDetailsSection: null,
       cameraResetTrigger: 0,
       cameraPreset: null,
       activeSection: 'heart',
@@ -451,6 +459,31 @@ export const useAppStore = create<AppState>()(
         };
         set({ activeMobileTab: tab, activeSection: secMap[tab] });
       },
+
+      setDetailsOpen: (open) =>
+        set((state) => ({
+          isDetailsOpen: open,
+          hasActiveDrawer: open,
+          activeDetailsSection: open ? state.activeDetailsSection : null,
+        })),
+
+      toggleDetailsOpen: () =>
+        set((state) => {
+          const next = !state.isDetailsOpen;
+          return {
+            isDetailsOpen: next,
+            hasActiveDrawer: next,
+            activeDetailsSection: next ? state.activeDetailsSection : null,
+          };
+        }),
+
+      openDetailsSection: (section) =>
+        set({
+          activeSection: 'heart',
+          isDetailsOpen: true,
+          activeDetailsSection: section,
+          hasActiveDrawer: true,
+        }),
 
       clearPatient: () =>
         set({

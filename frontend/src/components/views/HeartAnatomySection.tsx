@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { HeartScene } from '../../three/HeartScene';
 import { MinimalPersistentHUD } from '../dashboard/MinimalPersistentHUD';
 import { DetailsSlideOverPanel } from '../dashboard/DetailsSlideOverPanel';
@@ -7,8 +7,14 @@ import { Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const HeartAnatomySection: React.FC = () => {
-  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
-  const { isFocusMode, toggleFocusMode, setHasActiveDrawer } = useAppStore();
+  const {
+    isDetailsOpen,
+    setDetailsOpen,
+    toggleDetailsOpen,
+    isFocusMode,
+    toggleFocusMode,
+    setHasActiveDrawer,
+  } = useAppStore();
 
   // Inform CameraController whenever the Details slide-over panel opens or closes
   // so the 3D heart frames naturally to the left when open, and centers when closed.
@@ -60,13 +66,13 @@ export const HeartAnatomySection: React.FC = () => {
       {/* 3. ALWAYS VISIBLE MINIMAL PERSISTENT SUMMARY (The entire persistent dashboard) */}
       <MinimalPersistentHUD
         isDetailsOpen={isDetailsOpen}
-        onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
+        onToggleDetails={toggleDetailsOpen}
       />
 
       {/* 4. ON-DEMAND DETAILS SLIDE-IN PANEL (Slides in from the right over canvas) */}
       <DetailsSlideOverPanel
         isOpen={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
+        onClose={() => setDetailsOpen(false)}
       />
     </div>
   );
