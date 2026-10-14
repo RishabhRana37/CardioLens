@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useAppStore, GraphicQuality } from '../../store/useAppStore';
+import { useAppStore, GraphicQuality, AppSection } from '../../store/useAppStore';
 import {
   Settings,
   Sparkles,
@@ -14,6 +14,10 @@ import {
   X,
   Cpu,
   HelpCircle,
+  Heart,
+  FileText,
+  BarChart3,
+  Columns,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,6 +33,8 @@ export const SettingsMenuPopover: React.FC<SettingsMenuPopoverProps> = ({
   onClose,
 }) => {
   const {
+    activeSection,
+    setActiveSection,
     quality,
     setQuality,
     theme,
@@ -65,6 +71,13 @@ export const SettingsMenuPopover: React.FC<SettingsMenuPopoverProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  const sectionTabs: { id: AppSection; label: string; icon: React.FC<{ className?: string }> }[] = [
+    { id: 'heart', label: '3D Heart Anatomy', icon: Heart },
+    { id: 'inputs', label: 'Patient Input', icon: FileText },
+    { id: 'metrics', label: 'Metrics & SHAP', icon: BarChart3 },
+    { id: 'split', label: 'Split View', icon: Columns },
+  ];
 
   const qualityOptions: { id: GraphicQuality; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'cinematic', label: 'Cinematic', icon: Sparkles },
@@ -121,6 +134,40 @@ export const SettingsMenuPopover: React.FC<SettingsMenuPopoverProps> = ({
               >
                 <X className="w-3.5 h-3.5" />
               </button>
+            </div>
+
+            {/* Group 0: Workspace View Switcher */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] text-slate-300">
+                <span className="text-slate-400">Workspace View</span>
+                <span className="text-[10px] font-bold text-teal-400">
+                  {sectionTabs.find((t) => t.id === activeSection)?.label || '3D Heart'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-white/5">
+                {sectionTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeSection === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveSection(tab.id);
+                        onClose();
+                      }}
+                      className={`flex items-center gap-1.5 py-1.5 px-2 rounded-lg text-[10px] font-medium transition-all ${
+                        isActive
+                          ? 'bg-teal-600 text-white font-bold shadow-xs ring-1 ring-teal-400/40'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white' : 'text-teal-400'}`} />
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Group 1: 3D Graphics Quality */}

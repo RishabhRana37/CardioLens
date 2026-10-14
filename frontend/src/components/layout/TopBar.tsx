@@ -1,16 +1,12 @@
 import React, { useState } from 'react';
-import { useAppStore, AppSection } from '../../store/useAppStore';
+import { useAppStore } from '../../store/useAppStore';
 import { CardioLogo } from '../common/CardioLogo';
 import { SettingsMenuPopover } from './SettingsMenuPopover';
 import {
-  Heart,
   ShieldAlert,
   ShieldCheck,
   UserCheck,
   UserX,
-  FileText,
-  BarChart3,
-  Columns,
 } from 'lucide-react';
 
 export const TopBar: React.FC = () => {
@@ -19,8 +15,6 @@ export const TopBar: React.FC = () => {
   const {
     patientSummary,
     patientRiskTier,
-    activeSection,
-    setActiveSection,
     openDisclaimerModal,
     openModelTrust,
     patients,
@@ -29,24 +23,17 @@ export const TopBar: React.FC = () => {
     isPredicting,
   } = useAppStore();
 
-  const sectionTabs: { id: AppSection; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'heart', label: '3D Heart Anatomy', icon: Heart },
-    { id: 'inputs', label: 'Patient Input', icon: FileText },
-    { id: 'metrics', label: 'Metrics & SHAP', icon: BarChart3 },
-    { id: 'split', label: 'Split View', icon: Columns },
-  ];
-
   return (
     <header className="sticky top-0 z-40 border-b border-glass-border bg-slate-950/85 backdrop-blur-xl px-3 sm:px-5 py-2.5 transition-colors">
       <div className="flex items-center justify-between gap-3">
-        {/* 1. Left: Brand Logotype & Patient Context Chip */}
+        {/* 1. Brand Logotype + Tagline & 2. Patient Context Chip */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {/* Brand Logotype + Tagline */}
+          {/* 1. Brand Logo + Tagline */}
           <CardioLogo size="sm" showText={true} showTagline={true} />
 
           <div className="hidden sm:block h-6 w-[1px] bg-white/10" />
 
-          {/* Current Patient Quick Selector Chip */}
+          {/* 2. Patient Chip */}
           <div className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-white/10 hover:border-teal-500/40 text-xs shadow-glass-sm transition-all group">
             {patientSummary ? (
               <>
@@ -87,35 +74,9 @@ export const TopBar: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Center: Primary Section Navigation Tabs */}
-        <nav
-          aria-label="Primary Navigation"
-          className="hidden md:flex items-center bg-slate-900/90 p-1 rounded-xl border border-white/10 shadow-glass-sm"
-        >
-          {sectionTabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeSection === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveSection(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium transition-all ${
-                  isActive
-                    ? 'bg-teal-600 text-white shadow-xs font-bold ring-1 ring-teal-400/40'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-teal-400'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* 3. Right: Model Trust (Credibility), Disclaimer Pill (Required), and Settings Gear (⚙ ▾) */}
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          {/* Model Trust Button (Credibility) */}
+        {/* 3. Model Trust, 4. Disclaimer, and 5. Settings Gear (⚙ ▾) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* 3. Model Trust Button (Credibility) */}
           <button
             type="button"
             onClick={openModelTrust}
@@ -129,7 +90,7 @@ export const TopBar: React.FC = () => {
             </span>
           </button>
 
-          {/* Clinical Safety Disclaimer Pill (Required) */}
+          {/* 4. Clinical Safety Disclaimer Pill (Required) */}
           <button
             type="button"
             onClick={openDisclaimerModal}
@@ -141,7 +102,7 @@ export const TopBar: React.FC = () => {
             <span className="sm:hidden text-[10px]">⚠</span>
           </button>
 
-          {/* Settings Gear Popover (⚙ ▾) */}
+          {/* 5. Settings Gear Popover (⚙ ▾) */}
           <SettingsMenuPopover
             isOpen={isSettingsOpen}
             onToggle={() => setIsSettingsOpen(!isSettingsOpen)}
