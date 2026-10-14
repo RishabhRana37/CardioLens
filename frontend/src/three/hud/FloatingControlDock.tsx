@@ -15,6 +15,7 @@ import {
   Clapperboard,
   Volume2,
   VolumeX,
+  Maximize2,
 } from 'lucide-react';
 
 interface FloatingControlDockProps {
@@ -50,6 +51,9 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
     playIntro,
     isAudioEnabled,
     toggleAudio,
+    resetCameraView,
+    toggleFocusMode,
+    isFocusMode,
   } = useAppStore();
 
   const effectivePredictions = isProjectionMode && projectionPredictions ? projectionPredictions : predictions;
@@ -289,13 +293,27 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
           <Layers className="w-3.5 h-3.5" />
         </button>
 
-        {/* 9. Camera Reset Button */}
+        {/* 9. Focus Mode Toggle (Money-Shot Full Screen Stage) */}
         <button
-          onClick={() => {
-            selectVessel(null);
-            setCameraPreset('anterior');
-          }}
-          title="Reset Camera Framing"
+          onClick={toggleFocusMode}
+          title={isFocusMode ? 'Exit Focus Mode (Key: Esc or F)' : 'Enter Focus Mode (Key: F)'}
+          className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs transition-all ${
+            isFocusMode
+              ? 'bg-teal-950/90 border-teal-400 text-teal-300 shadow-glow-teal font-bold'
+              : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+        >
+          <Maximize2 className="w-3.5 h-3.5 text-teal-400" />
+          <span className="hidden sm:inline">Focus</span>
+          <kbd className="hidden sm:inline text-[9px] px-1 rounded bg-slate-800/80 border border-white/10 text-slate-400">
+            F
+          </kbd>
+        </button>
+
+        {/* 10. Canonical Home Framing Reset Button */}
+        <button
+          onClick={resetCameraView}
+          title="Reset View to Canonical Home Framing"
           className="p-1.5 rounded-xl bg-slate-900/90 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />

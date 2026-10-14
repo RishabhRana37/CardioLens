@@ -1,15 +1,11 @@
-import React from 'react';
-import { useAppStore, GraphicQuality, AppSection } from '../../store/useAppStore';
+import React, { useState } from 'react';
+import { useAppStore, AppSection } from '../../store/useAppStore';
 import { CardioLogo } from '../common/CardioLogo';
+import { SettingsMenuPopover } from './SettingsMenuPopover';
 import {
   Heart,
   ShieldAlert,
   ShieldCheck,
-  Sun,
-  Moon,
-  Sparkles,
-  SlidersHorizontal,
-  Zap,
   UserCheck,
   UserX,
   FileText,
@@ -18,17 +14,19 @@ import {
 } from 'lucide-react';
 
 export const TopBar: React.FC = () => {
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
   const {
-    quality,
-    setQuality,
-    theme,
-    toggleTheme,
     patientSummary,
     patientRiskTier,
     activeSection,
     setActiveSection,
     openDisclaimerModal,
     openModelTrust,
+    patients,
+    currentPatientId,
+    loadSample,
+    isPredicting,
   } = useAppStore();
 
   const sectionTabs: { id: AppSection; label: string; icon: React.FC<{ className?: string }> }[] = [
@@ -38,33 +36,37 @@ export const TopBar: React.FC = () => {
     { id: 'split', label: 'Split View', icon: Columns },
   ];
 
-  const qualityOptions: { id: GraphicQuality; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'cinematic', label: 'Cinematic', icon: Sparkles },
-    { id: 'balanced', label: 'Balanced', icon: SlidersHorizontal },
-    { id: 'performance', label: 'Performance', icon: Zap },
-  ];
-
   return (
     <header className="sticky top-0 z-40 border-b border-glass-border bg-slate-950/85 backdrop-blur-xl px-3 sm:px-5 py-2.5 transition-colors">
       <div className="flex items-center justify-between gap-3">
-        {/* Left: Brand Logotype & Patient Context Chip */}
+        {/* 1. Left: Brand Logotype & Patient Context Chip */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {/* Distinctive Brand Logotype */}
+          {/* Brand Logotype + Tagline */}
           <CardioLogo size="sm" showText={true} showTagline={true} />
 
           <div className="hidden sm:block h-6 w-[1px] bg-white/10" />
 
-          {/* Current Patient Chip */}
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-900/90 border border-white/10 text-xs shadow-glass-sm">
+          {/* Current Patient Quick Selector Chip */}
+          <div className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-white/10 hover:border-teal-500/40 text-xs shadow-glass-sm transition-all group">
             {patientSummary ? (
               <>
                 <UserCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <span className="text-slate-200 font-medium truncate max-w-[120px] sm:max-w-[170px]">
-                  {patientSummary}
-                </span>
+                <select
+                  aria-label="Select Patient"
+                  value={currentPatientId || ''}
+                  onChange={(e) => loadSample(Number(e.target.value))}
+                  disabled={isPredicting}
+                  className="bg-transparent text-slate-200 font-medium text-xs focus:outline-none cursor-pointer pr-1 appearance-none max-w-[130px] sm:max-w-[180px] truncate"
+                >
+                  {patients.map((p) => (
+                    <option key={p.id} value={p.id} className="bg-slate-950 text-slate-100 py-1">
+                      {p.summary}
+                    </option>
+                  ))}
+                </select>
                 {patientRiskTier && (
                   <span
-                    className={`text-[10px] font-mono uppercase px-1.5 py-0.2 rounded ${
+                    className={`text-[10px] font-mono uppercase px-1.5 py-0.2 rounded shrink-0 pointer-events-none ${
                       patientRiskTier === 'high'
                         ? 'bg-red-950/80 text-red-300 border border-red-800/50'
                         : patientRiskTier === 'moderate'
@@ -85,7 +87,7 @@ export const TopBar: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Primary Section Navigation Tabs (Decluttered Console) */}
+        {/* 2. Center: Primary Section Navigation Tabs */}
         <nav
           aria-label="Primary Navigation"
           className="hidden md:flex items-center bg-slate-900/90 p-1 rounded-xl border border-white/10 shadow-glass-sm"
@@ -111,87 +113,40 @@ export const TopBar: React.FC = () => {
           })}
         </nav>
 
-        {/* Right: Quality, Theme Toggle, Tour, Model Trust, Disclaimer */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quality Selector (Segmented Button) */}
-          <div className="hidden lg:flex items-center bg-slate-900/90 p-0.5 rounded-lg border border-white/10 text-xs">
-            {qualityOptions.map((opt) => {
-              const Icon = opt.icon;
-              const isActive = quality === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setQuality(opt.id)}
-                  title={`Graphics Quality: ${opt.label}`}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                    isActive
-                      ? 'bg-teal-600 text-slate-950 shadow-sm font-semibold'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <Icon className="w-3 h-3" />
-                  <span>{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Model Version Tag */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-white/10 text-[11px] font-mono text-slate-300">
-            <Heart className="w-3 h-3 text-teal-400" />
-            <span>XGB-Calibrated</span>
-          </div>
-
-          {/* Light / Dark Mode Toggle */}
+        {/* 3. Right: Model Trust (Credibility), Disclaimer Pill (Required), and Settings Gear (⚙ ▾) */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Model Trust Button (Credibility) */}
           <button
-            onClick={toggleTheme}
-            aria-label="Toggle visual theme"
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
-            className="p-1.5 rounded-lg bg-slate-900/90 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-300" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-300" />
-            )}
-          </button>
-
-          {/* Tour / Guide Button */}
-          <button
-            onClick={() => {
-              localStorage.removeItem('cardiotwin_onboarding_dismissed');
-              window.location.reload();
-            }}
-            title="Restart Interactive Clinical Tour"
-            className="p-1.5 rounded-lg bg-slate-900/90 border border-white/10 text-slate-300 hover:text-teal-300 hover:bg-slate-800 transition-colors text-xs flex items-center gap-1"
-          >
-            <Sparkles className="w-4 h-4 text-teal-400" />
-            <span className="hidden 2xl:inline text-[11px] font-mono">Tour</span>
-          </button>
-
-          {/* Model Trust Validation Modal / Drawer Trigger */}
-          <button
+            type="button"
             onClick={openModelTrust}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-950/70 border border-teal-500/40 text-teal-300 hover:bg-teal-900/80 transition-colors text-xs font-mono font-medium shadow-xs group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-teal-950/70 border border-teal-500/40 text-teal-300 hover:bg-teal-900/80 transition-colors text-xs font-mono font-medium shadow-xs group"
             title="Inspect 10-fold cross-validation metrics, ROC curves, calibration, and global SHAP hierarchy"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0 group-hover:scale-110 transition-transform" />
             <span className="hidden sm:inline text-[11px] font-bold">Model Trust</span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-teal-900/90 text-teal-200 border border-teal-500/30">
+            <span className="text-[9px] px-1 py-0.2 rounded bg-teal-900/90 text-teal-200 border border-teal-500/30 font-bold">
               AUC 0.94
             </span>
           </button>
 
-          {/* Condensed Disclaimer Pill (Req 5) */}
+          {/* Clinical Safety Disclaimer Pill (Required) */}
           <button
+            type="button"
             onClick={openDisclaimerModal}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/50 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 transition-colors text-xs font-medium shadow-sm group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-950/50 border border-amber-500/40 text-amber-300 hover:bg-amber-900/60 transition-colors text-xs font-medium shadow-sm group"
             title="Read clinical safety disclaimer"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
             <span className="hidden sm:inline text-[11px] font-semibold">Disclaimer</span>
             <span className="sm:hidden text-[10px]">⚠</span>
           </button>
+
+          {/* Settings Gear Popover (⚙ ▾) */}
+          <SettingsMenuPopover
+            isOpen={isSettingsOpen}
+            onToggle={() => setIsSettingsOpen(!isSettingsOpen)}
+            onClose={() => setIsSettingsOpen(false)}
+          />
         </div>
       </div>
     </header>

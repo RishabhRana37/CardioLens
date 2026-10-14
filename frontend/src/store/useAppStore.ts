@@ -29,6 +29,9 @@ export interface AppState {
   isCrossSectionOpen: boolean;
   isCompareMode: boolean;
   isProjectionMode: boolean;
+  isFocusMode: boolean;
+  hasActiveDrawer: boolean;
+  cameraResetTrigger: number;
   cameraPreset: 'anterior' | 'posterior' | 'left' | 'right' | 'apical' | null;
   activeSection: AppSection;
   activeMobileTab: MobileTab;
@@ -93,6 +96,10 @@ export interface AppState {
   setCrossSectionOpen: (open: boolean) => void;
   toggleCompareMode: () => void;
   setCompareMode: (compare: boolean) => void;
+  toggleFocusMode: () => void;
+  setFocusMode: (focus: boolean) => void;
+  setHasActiveDrawer: (active: boolean) => void;
+  resetCameraView: () => void;
   setCameraPreset: (preset: 'anterior' | 'posterior' | 'left' | 'right' | 'apical' | null) => void;
   setDisclaimerAcknowledged: (ack: boolean) => void;
   openDisclaimerModal: () => void;
@@ -119,6 +126,9 @@ export const useAppStore = create<AppState>()(
       isCrossSectionOpen: false,
       isCompareMode: false,
       isProjectionMode: false,
+      isFocusMode: false,
+      hasActiveDrawer: false,
+      cameraResetTrigger: 0,
       cameraPreset: null,
       activeSection: 'heart',
       activeMobileTab: 'heart',
@@ -387,6 +397,15 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           isCompareMode: compare,
           quality: compare && state.quality === 'cinematic' ? 'balanced' : state.quality,
+        })),
+      toggleFocusMode: () => set((state) => ({ isFocusMode: !state.isFocusMode })),
+      setFocusMode: (focus: boolean) => set({ isFocusMode: focus }),
+      setHasActiveDrawer: (active: boolean) => set({ hasActiveDrawer: active }),
+      resetCameraView: () =>
+        set((state) => ({
+          selectedVessel: null,
+          cameraPreset: null,
+          cameraResetTrigger: state.cameraResetTrigger + 1,
         })),
       setCameraPreset: (preset) => set({ cameraPreset: preset }),
 

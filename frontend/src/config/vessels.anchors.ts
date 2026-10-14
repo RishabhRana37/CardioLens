@@ -36,7 +36,7 @@ export const VESSEL_ANCHORS: Record<'LAD' | 'LCX' | 'RCA', VesselAnchorConfig> =
         [0.68, -0.30, 0.40],
       ],
     ],
-    radius: 0.046,
+    radius: 0.058,
     taper: 0.62,
   },
   LCX: {
@@ -64,7 +64,7 @@ export const VESSEL_ANCHORS: Record<'LAD' | 'LCX' | 'RCA', VesselAnchorConfig> =
         [0.68, -0.28, -0.35],
       ],
     ],
-    radius: 0.044,
+    radius: 0.054,
     taper: 0.65,
   },
   RCA: {
@@ -98,7 +98,7 @@ export const VESSEL_ANCHORS: Record<'LAD' | 'LCX' | 'RCA', VesselAnchorConfig> =
         [-0.04, -0.62, 0.32],
       ],
     ],
-    radius: 0.045,
+    radius: 0.056,
     taper: 0.65,
   },
 };

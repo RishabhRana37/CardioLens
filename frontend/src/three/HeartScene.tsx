@@ -6,21 +6,14 @@ import { useAppStore } from '../store/useAppStore';
 import { HeartModelLoader, InspectedNodeInfo, ModelMode } from './heart/HeartModelLoader';
 import { BloodFlowParticles } from './heart/BloodFlowParticles';
 import { VesselAnchoredLabels } from './heart/VesselAnchoredLabels';
-import { LumenCrossSectionOverlay } from './heart/LumenCrossSectionOverlay';
 import { CameraController } from './heart/CameraController';
 import { PostProcessingEffects } from './heart/PostProcessingEffects';
 import { ThreeErrorBoundary } from './ThreeErrorBoundary';
 import { ModelInspectorOverlay } from './inspector/ModelInspectorOverlay';
-import { RadialRiskGauge } from './hud/RadialRiskGauge';
-import { FloatingControlDock } from './hud/FloatingControlDock';
-import { CanvasLegendAndWatermark } from './hud/CanvasLegendAndWatermark';
 import { CompareModeOverlay } from './hud/CompareModeOverlay';
 import { BrandedHeartSkeleton } from '../components/common/BrandedHeartSkeleton';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Box,
-  RefreshCw,
-  Sparkles,
   FastForward,
 } from 'lucide-react';
 
@@ -41,7 +34,6 @@ export const HeartScene: React.FC = () => {
     selectedVessel,
     selectVessel,
     colorFor,
-    isPredicting,
     isAngiogramMode,
     toggleAngiogramMode,
     isCompareMode,
@@ -50,6 +42,9 @@ export const HeartScene: React.FC = () => {
     skipIntro,
     isAudioEnabled,
     toggleAudio,
+    isFocusMode,
+    toggleFocusMode,
+    setFocusMode,
   } = useAppStore();
 
   const dpr = quality === 'cinematic' ? 2 : quality === 'balanced' ? 1.5 : 1;
@@ -82,8 +77,16 @@ export const HeartScene: React.FC = () => {
         return;
       }
 
-      if (e.key === 'Escape' && isIntroPlaying) {
-        skipIntro();
+      if (e.key === 'Escape') {
+        if (isIntroPlaying) {
+          skipIntro();
+        } else if (isFocusMode) {
+          setFocusMode(false);
+        }
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFocusMode();
       }
       if (e.key === 'm' || e.key === 'M') {
         toggleAudio();
@@ -109,10 +112,20 @@ export const HeartScene: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectVessel, toggleAngiogramMode, toggleCompareMode, isIntroPlaying, skipIntro, toggleAudio]);
+  }, [
+    selectVessel,
+    toggleAngiogramMode,
+    toggleCompareMode,
+    isIntroPlaying,
+    skipIntro,
+    toggleAudio,
+    isFocusMode,
+    toggleFocusMode,
+    setFocusMode,
+  ]);
 
   return (
-    <div className="relative w-full h-full min-h-[560px] lg:min-h-[680px] rounded-2xl bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between group select-none">
+    <div className="relative w-full h-full bg-gradient-to-b from-slate-950/95 via-[#060912] to-[#030508] overflow-hidden flex flex-col justify-between select-none">
       {/* Background Deep Near-Black Radial-Gradient Backdrop with Vignette */}
       <div
         className="absolute inset-0 pointer-events-none transition-all duration-700"
@@ -179,47 +192,7 @@ export const HeartScene: React.FC = () => {
       {/* Compare Mode Full-Stage Overlay */}
       {isCompareMode && <CompareModeOverlay />}
 
-      {/* Top Cockpit HUD (Hidden during compare mode to declutter) */}
-      {!isCompareMode && (
-        <div className="relative z-20 p-3.5 sm:p-4 flex items-start justify-between gap-3 pointer-events-none">
-          {/* Top-Left: Animated Radial Risk Gauge */}
-          <RadialRiskGauge />
-
-          {/* Top-Right: Stage Status Chips & Quick Controls */}
-          <div className="flex flex-col items-end gap-2 pointer-events-auto">
-            {/* Status Chip */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/85 border border-white/10 backdrop-blur-xl text-xs font-mono text-slate-300 shadow-glass-sm">
-              <Box className="w-3.5 h-3.5 text-teal-400" />
-              <span className="font-semibold text-slate-200 hidden sm:inline">3D Stage</span>
-              <span className="text-slate-600 hidden sm:inline">|</span>
-              <span
-                className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                  detectedMode === 'MODE_A'
-                    ? 'bg-teal-950 text-teal-300 border border-teal-500/40'
-                    : 'bg-amber-950 text-amber-300 border border-amber-500/40'
-                }`}
-              >
-                {detectedMode}
-              </span>
-              {isPredicting && (
-                <span className="flex items-center gap-1 text-amber-400 pl-1 text-[11px]">
-                  <RefreshCw className="w-3 h-3 animate-spin" /> Recolor...
-                </span>
-              )}
-            </div>
-
-            {/* Angiogram Status Indicator Badge */}
-            {isAngiogramMode && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-950/90 border border-amber-500/60 text-amber-300 text-[10px] font-mono font-bold shadow-glow-amber animate-pulse">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>Fluoroscopy Contrast Mode</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Dev-Only Model Inspector Overlay */}
+      {/* Dev-Only Model Inspector Overlay (Key: I) */}
       <ModelInspectorOverlay
         isOpen={isInspectorOpen}
         onClose={() => setIsInspectorOpen(false)}
@@ -228,9 +201,6 @@ export const HeartScene: React.FC = () => {
         selectedNodeId={selectedInspectorNodeId}
         onSelectNode={setSelectedInspectorNodeId}
       />
-
-      {/* Probability-Scaled Lumen Cross-Section Cutaway Overlay */}
-      {!isCompareMode && <LumenCrossSectionOverlay />}
 
       {/* 3D WebGL Canvas Viewport */}
       <div className="absolute inset-0 z-10">
@@ -246,52 +216,52 @@ export const HeartScene: React.FC = () => {
               toneMappingExposure: isAngiogramMode ? 1.25 : 1.08,
             }}
           >
-            {/* Cinematic Lighting Rig (Dims to Cath-Lab Dark Fluoroscopy in Angiogram mode) */}
-            <ambientLight intensity={isAngiogramMode ? 0.18 : 0.45} />
+            {/* Balanced Clinical Lighting Rig: Deep contrast for realistic wet muscle + glowing arteries */}
+            <ambientLight intensity={isAngiogramMode ? 0.18 : 0.35} />
 
-            {/* 1. Key Light */}
+            {/* 1. Key Light (Soft warm clinical illumination) */}
             <directionalLight
               position={[4.2, 4.8, 3.8]}
-              intensity={isAngiogramMode ? 0.6 : 2.2}
-              color="#fff8f5"
+              intensity={isAngiogramMode ? 0.6 : 1.3}
+              color="#fff5ee"
             />
 
-            {/* 2. Cool Teal Fill Light */}
+            {/* 2. Cool Teal Fill Light (Subtle curvature rim) */}
             <directionalLight
               position={[-4.5, 2.2, 2.0]}
-              intensity={isAngiogramMode ? 0.3 : 1.1}
+              intensity={isAngiogramMode ? 0.3 : 0.7}
               color="#0ea5e9"
             />
 
-            {/* 3. Rim / Back Light (Luminous Edge Silhouette for Smoky Glass Heart) */}
+            {/* 3. Rim / Back Light (Silhouetting organ contours) */}
             <directionalLight
               position={[0, 4.2, -4.8]}
-              intensity={isAngiogramMode ? 2.4 : 2.8}
+              intensity={isAngiogramMode ? 2.4 : 1.8}
               color="#38bdf8"
             />
 
             {/* 4. Inferior Fill Light */}
             <directionalLight
               position={[0, -3.8, -2.0]}
-              intensity={isAngiogramMode ? 0.3 : 1.2}
+              intensity={isAngiogramMode ? 0.3 : 0.5}
               color="#0d9488"
             />
 
-            {/* 5. Fluoroscopy Beam Spotlight */}
+            {/* 5. Fluoroscopy / Focus Spotlight */}
             <spotLight
               position={[0, 4.8, 0.2]}
               target-position={[0, 0, 0]}
               angle={0.42}
               penumbra={0.88}
-              intensity={isAngiogramMode ? 3.8 : 2.5}
+              intensity={isAngiogramMode ? 3.4 : 1.2}
               color={isAngiogramMode ? '#38bdf8' : '#f8fafc'}
               distance={8}
             />
 
-            {/* Specular Glint Center Point */}
+            {/* Specular Wet Glint Center Point */}
             <pointLight
               position={[0, 1.2, 3.0]}
-              intensity={isAngiogramMode ? 0.4 : 0.7}
+              intensity={isAngiogramMode ? 0.3 : 0.35}
               color="#ffffff"
               distance={7}
             />
@@ -401,16 +371,6 @@ export const HeartScene: React.FC = () => {
         </ThreeErrorBoundary>
       </div>
 
-      {/* Bottom Floating Command & Scrubber Dock */}
-      <FloatingControlDock
-        isBeating={isBeating}
-        onToggleBeating={() => setIsBeating((prev) => !prev)}
-        isInspectorOpen={isInspectorOpen}
-        onToggleInspector={() => setIsInspectorOpen((prev) => !prev)}
-      />
-
-      {/* Bottom HUD Legend & Persistent Disclaimer Watermark */}
-      <CanvasLegendAndWatermark />
     </div>
   );
 };

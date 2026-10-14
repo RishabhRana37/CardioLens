@@ -52,14 +52,12 @@ export const OnboardingCoachMarks: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   useEffect(() => {
-    const isDismissed = localStorage.getItem(STORAGE_KEY);
-    if (!isDismissed) {
-      // Show onboarding 1.2s after boot
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 1200);
-      return () => clearTimeout(timer);
-    }
+    const handleStartTour = () => {
+      setCurrentStep(0);
+      setIsVisible(true);
+    };
+    window.addEventListener('cardiotwin-start-tour', handleStartTour);
+    return () => window.removeEventListener('cardiotwin-start-tour', handleStartTour);
   }, []);
 
   const handleDismiss = () => {

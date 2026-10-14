@@ -1,363 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeartScene } from '../../three/HeartScene';
-import { WhatIfPanel } from '../whatif/WhatIfPanel';
-import { ProjectionPanel } from '../projection/ProjectionPanel';
-import { CoronaryTreeSchematic } from '../common/CoronaryTreeSchematic';
-import { ClinicalSummaryCard } from '../dashboard/ClinicalSummaryCard';
-import { CohortContextView } from '../dashboard/CohortContextView';
-import { GlassPanel } from '../common/GlassPanel';
-import {
-  Sparkles,
-  Sliders,
-  BookOpen,
-  ExternalLink,
-  X,
-  Heart,
-  ShieldCheck,
-  Calendar,
-  GitBranch,
-  FileText,
-  Users,
-} from 'lucide-react';
+import { MinimalPersistentHUD } from '../dashboard/MinimalPersistentHUD';
+import { DetailsSlideOverPanel } from '../dashboard/DetailsSlideOverPanel';
+import { useAppStore } from '../../store/useAppStore';
+import { Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const HeartAnatomySection: React.FC = () => {
-  const [showWhatIfDrawer, setShowWhatIfDrawer] = useState<boolean>(false);
-  const [showAtlasGuide, setShowAtlasGuide] = useState<boolean>(false);
-  const [showProjectionDrawer, setShowProjectionDrawer] = useState<boolean>(false);
-  const [show2DMap, setShow2DMap] = useState<boolean>(false);
-  const [showSummaryDrawer, setShowSummaryDrawer] = useState<boolean>(false);
-  const [showCohortDrawer, setShowCohortDrawer] = useState<boolean>(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
+  const { isFocusMode, toggleFocusMode, setHasActiveDrawer } = useAppStore();
+
+  // Inform CameraController whenever the Details slide-over panel opens or closes
+  // so the 3D heart frames naturally to the left when open, and centers when closed.
+  useEffect(() => {
+    setHasActiveDrawer(isDetailsOpen && !isFocusMode);
+  }, [isDetailsOpen, isFocusMode, setHasActiveDrawer]);
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const fadeTransition = {
+    duration: prefersReducedMotion ? 0 : 0.3,
+    ease: 'easeInOut',
+  };
 
   return (
-    <div className="relative w-full flex-1 flex flex-col xl:flex-row gap-4 h-full min-h-[640px]">
-      {/* 3D Heart Hero Stage (Takes Full Focus) */}
-      <div className="flex-1 flex flex-col h-full min-h-[580px] relative">
+    <div className="relative w-full h-full min-h-screen overflow-hidden">
+      {/* 1. 3D Heart Hero Stage (The heart owns the entire screen) */}
+      <div className="fixed inset-0 w-full h-full z-0 pointer-events-auto">
         <HeartScene />
-
-        {/* Floating Top-Right Action Controls */}
-        <div className="absolute top-4 right-4 z-30 pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
-          {/* Cohort Population Benchmark Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowCohortDrawer(!showCohortDrawer);
-              if (!showCohortDrawer) {
-                setShowWhatIfDrawer(false);
-                setShowAtlasGuide(false);
-                setShowProjectionDrawer(false);
-                setShow2DMap(false);
-                setShowSummaryDrawer(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              showCohortDrawer
-                ? 'bg-teal-600 text-white border-teal-400 shadow-glow-teal font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Open Population & Cohort Distribution Strips"
-          >
-            <Users className="w-3.5 h-3.5 text-teal-300" />
-            <span>{showCohortDrawer ? 'Close Cohort' : 'Cohort Context'}</span>
-          </button>
-
-          {/* Voice-Enabled Clinical Summary Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowSummaryDrawer(!showSummaryDrawer);
-              if (!showSummaryDrawer) {
-                setShowWhatIfDrawer(false);
-                setShowAtlasGuide(false);
-                setShowProjectionDrawer(false);
-                setShow2DMap(false);
-                setShowCohortDrawer(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              showSummaryDrawer
-                ? 'bg-rose-600 text-white border-rose-400 shadow-glow-red font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Open Voice-Narrated Plain-Language Clinical Summary"
-          >
-            <FileText className="w-3.5 h-3.5 text-rose-300" />
-            <span>{showSummaryDrawer ? 'Close Summary' : 'Clinical Summary'}</span>
-          </button>
-
-          {/* 2D Coronary Tree Map Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setShow2DMap(!show2DMap);
-              if (!show2DMap) {
-                setShowWhatIfDrawer(false);
-                setShowAtlasGuide(false);
-                setShowProjectionDrawer(false);
-                setShowSummaryDrawer(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              show2DMap
-                ? 'bg-teal-600 text-white border-teal-400 shadow-glow-teal font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Toggle 2D Cath-Lab Coronary Tree Schematic"
-          >
-            <GitBranch className="w-3.5 h-3.5 text-teal-300" />
-            <span>{show2DMap ? 'Close 2D Tree' : '2D Coronary Map'}</span>
-          </button>
-
-          {/* Anatomy Atlas & BodyParts3D Reference */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowAtlasGuide(!showAtlasGuide);
-              if (!showAtlasGuide) {
-                setShowWhatIfDrawer(false);
-                setShowProjectionDrawer(false);
-                setShow2DMap(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              showAtlasGuide
-                ? 'bg-indigo-600 text-white border-indigo-400 shadow-glow-teal font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Open BodyParts3D Heart Anatomy Atlas Guide"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-300" />
-            <span>{showAtlasGuide ? 'Close Atlas' : 'Anatomy Atlas (BP3D)'}</span>
-          </button>
-
-          {/* 5-Year Horizon Projection Toggle Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowProjectionDrawer(!showProjectionDrawer);
-              if (!showProjectionDrawer) {
-                setShowWhatIfDrawer(false);
-                setShowAtlasGuide(false);
-                setShow2DMap(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              showProjectionDrawer
-                ? 'bg-amber-600 text-white border-amber-400 shadow-glow-amber font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Open 5-Year Horizon Risk Projection Timeline"
-          >
-            <Calendar className="w-3.5 h-3.5 text-amber-300" />
-            <span>{showProjectionDrawer ? 'Close Projection' : '5-Yr Projection'}</span>
-          </button>
-
-          {/* Quick What-If Toggle Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setShowWhatIfDrawer(!showWhatIfDrawer);
-              if (!showWhatIfDrawer) {
-                setShowAtlasGuide(false);
-                setShowProjectionDrawer(false);
-                setShow2DMap(false);
-              }
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium backdrop-blur-xl shadow-lg transition-all ${
-              showWhatIfDrawer
-                ? 'bg-teal-600 text-white border-teal-400 shadow-glow-teal font-bold'
-                : 'bg-slate-900/90 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-            <span>{showWhatIfDrawer ? 'Close What-If' : 'Quick What-If Twin'}</span>
-          </button>
-        </div>
       </div>
 
-      {/* Slide-in What-If Digital Twin Drawer if enabled */}
+      {/* 2. Floating Exit Focus Indicator & Button (Visible only in Focus Mode) */}
       <AnimatePresence>
-        {showWhatIfDrawer && (
+        {isFocusMode && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[380px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
+            initial={{ opacity: 0, scale: 0.9, y: -15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -15 }}
+            transition={fadeTransition}
+            className="fixed top-5 right-5 z-50 pointer-events-auto"
           >
-            <GlassPanel variant="command" className="space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="text-xs font-mono uppercase text-teal-400 font-bold flex items-center gap-1.5">
-                  <Sliders className="w-3.5 h-3.5" /> Live Simulation Workbench
-                </span>
-                <button
-                  onClick={() => setShowWhatIfDrawer(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <WhatIfPanel />
-            </GlassPanel>
-          </motion.div>
-        )}
-
-        {/* Slide-in BodyParts3D Heart Anatomy Atlas Guide */}
-        {showAtlasGuide && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[410px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
-          >
-            <GlassPanel variant="default" className="space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-rose-400" />
-                  <span className="text-xs font-mono uppercase text-slate-100 font-bold">
-                    Heart Anatomy Atlas & Nomenclature
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowAtlasGuide(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* BodyParts3D Attribution Banner */}
-              <div className="p-3 rounded-lg bg-indigo-950/40 border border-indigo-500/30 space-y-1.5 text-xs font-mono">
-                <div className="flex items-center justify-between text-indigo-300 font-bold text-[11px]">
-                  <span>BodyParts3D / DBCLS Database</span>
-                  <a
-                    href="https://lifesciencedb.jp/bp3d/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-teal-400 hover:underline"
-                  >
-                    lifesciencedb.jp/bp3d <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
-                  Anatomically mapped 3D digital twin replicating the iconic medical illustration:
-                </p>
-              </div>
-
-              {/* Anatomical Key Reference Checklist */}
-              <div className="space-y-2.5 text-xs font-mono">
-                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/5 space-y-1">
-                  <div className="flex items-center gap-2 text-rose-300 font-bold text-[11px]">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                    1. Aortic Arch & 3 Branches (Red)
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-sans pl-4">
-                    Ascending aorta arching over the base with Brachiocephalic trunk (bifurcating), Left Common Carotid, and Left Subclavian artery.
-                  </p>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/5 space-y-1">
-                  <div className="flex items-center gap-2 text-sky-300 font-bold text-[11px]">
-                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500 shrink-0" />
-                    2. Pulmonary Trunk & Arteries (Cobalt Blue)
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-sans pl-4">
-                    Emerges from the RV outflow tract, crosses anteriorly across the aorta, and bifurcates into left & right pulmonary arteries.
-                  </p>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/5 space-y-1">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold text-[11px]">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
-                    3. Right & Left Auricles (Ochre/Tan)
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-sans pl-4">
-                    Textured, crenelated atrial appendages flanking the ventricular base on both medial and lateral borders.
-                  </p>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-900/60 border border-white/5 space-y-1">
-                  <div className="flex items-center gap-2 text-emerald-300 font-bold text-[11px]">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                    4. Paired Coronary Vasculature (LAD & Vein)
-                  </div>
-                  <p className="text-[10px] text-slate-400 font-sans pl-4">
-                    Left Anterior Descending artery (Red/Risk-mapped) accompanied by the Great Cardiac Vein (Blue) coursing down the anterior sulcus to the apex.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-slate-900/40 border border-white/5 text-[10px] font-mono text-slate-400 flex items-center gap-2">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-                <span>3D Spline coordinates calibrated to BodyParts3D FMA ontology</span>
-              </div>
-            </GlassPanel>
-          </motion.div>
-        )}
-
-        {/* Slide-in 5-Year Horizon Projection Drawer */}
-        {showProjectionDrawer && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[420px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
-          >
-            <GlassPanel variant="command" className="space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="text-xs font-mono uppercase text-amber-400 font-bold flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Longitudinal Trajectory Forecast
-                </span>
-                <button
-                  onClick={() => setShowProjectionDrawer(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <ProjectionPanel />
-            </GlassPanel>
-          </motion.div>
-        )}
-
-        {/* Slide-in 2D Coronary Tree Schematic Drawer */}
-        {show2DMap && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[420px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
-          >
-            <CoronaryTreeSchematic showTitle={true} />
-          </motion.div>
-        )}
-
-        {/* Slide-in Voice-Narrated Plain-Language Clinical Summary Drawer */}
-        {showSummaryDrawer && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[440px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
-          >
-            <ClinicalSummaryCard />
-          </motion.div>
-        )}
-
-        {/* Slide-in Cohort Context & Population Benchmarks Drawer */}
-        {showCohortDrawer && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="w-full xl:w-[440px] shrink-0 overflow-y-auto max-h-[calc(100vh-9.5rem)] pr-1"
-          >
-            <CohortContextView showTitle={true} />
+            <button
+              onClick={toggleFocusMode}
+              title="Exit Focus Mode (Key: Esc or F)"
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/85 hover:bg-slate-800 border border-teal-500/40 hover:border-teal-400 text-xs font-mono font-medium text-slate-200 hover:text-white backdrop-blur-2xl shadow-2xl transition-all group"
+            >
+              <Minimize2 className="w-3.5 h-3.5 text-teal-400 group-hover:scale-110 transition-transform" />
+              <span>Exit Focus</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-white/10 text-[10px] text-slate-400">
+                Esc
+              </kbd>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 3. ALWAYS VISIBLE MINIMAL PERSISTENT SUMMARY (The entire persistent dashboard) */}
+      <MinimalPersistentHUD
+        isDetailsOpen={isDetailsOpen}
+        onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
+      />
+
+      {/* 4. ON-DEMAND DETAILS SLIDE-IN PANEL (Slides in from the right over canvas) */}
+      <DetailsSlideOverPanel
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+      />
     </div>
   );
 };
 
 export default HeartAnatomySection;
-

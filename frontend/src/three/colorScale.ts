@@ -20,27 +20,43 @@ export interface Rgb255 {
 }
 
 /**
+ * Smooth Hermite interpolation helper (C1 continuous)
+ */
+function smoothstep(min: number, max: number, value: number): number {
+  const x = Math.max(0, Math.min(1, (value - min) / (max - min)));
+  return x * x * (3 - 2 * x);
+}
+
+/**
  * Computes continuous RGB [0..255] interpolation across green -> amber -> red
+ * Low (<=0.28):  Green #16a34a (rgb(22, 163, 74)) - 23% LCX reads clearly green
+ * Mid (~0.50):   Amber #f59e0b (rgb(245, 158, 11))
+ * High (>=0.72): Red   #dc2626 (rgb(220, 38, 38)) - 94% LAD reads hot red
  */
 function interpolateRiskRgb(probability: number): Rgb255 {
   const p = isNaN(probability) ? 0 : Math.max(0, Math.min(1, probability));
+  const green: Rgb255 = { r: 22, g: 163, b: 74 };   // #16a34a
+  const amber: Rgb255 = { r: 245, g: 158, b: 11 };  // #f59e0b
+  const red: Rgb255 = { r: 220, g: 38, b: 38 };     // #dc2626
 
-  if (p <= 0.5) {
-    // Lerp from Green (22, 163, 74) to Amber (245, 158, 11)
-    const t = p / 0.5;
+  if (p <= 0.28) {
+    return green;
+  } else if (p <= 0.52) {
+    const t = smoothstep(0.28, 0.52, p);
     return {
-      r: Math.round(22 + (245 - 22) * t),
-      g: Math.round(163 + (158 - 163) * t),
-      b: Math.round(74 + (11 - 74) * t),
+      r: Math.round(green.r + (amber.r - green.r) * t),
+      g: Math.round(green.g + (amber.g - green.g) * t),
+      b: Math.round(green.b + (amber.b - green.b) * t),
+    };
+  } else if (p <= 0.72) {
+    const t = smoothstep(0.52, 0.72, p);
+    return {
+      r: Math.round(amber.r + (red.r - amber.r) * t),
+      g: Math.round(amber.g + (red.g - amber.g) * t),
+      b: Math.round(amber.b + (red.b - amber.b) * t),
     };
   } else {
-    // Lerp from Amber (245, 158, 11) to Red (220, 38, 38)
-    const t = (p - 0.5) / 0.5;
-    return {
-      r: Math.round(245 + (220 - 245) * t),
-      g: Math.round(158 + (38 - 158) * t),
-      b: Math.round(11 + (38 - 11) * t),
-    };
+    return red;
   }
 }
 

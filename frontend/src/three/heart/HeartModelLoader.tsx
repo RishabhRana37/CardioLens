@@ -84,8 +84,7 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
     RCA: new THREE.Color('#16a34a'),
   });
 
-  const currentMyoColor = useRef<THREE.Color>(new THREE.Color('#8d1e2d'));
-  const targetMyoColor = useRef<THREE.Color>(new THREE.Color('#8d1e2d'));
+
 
   // Attempt to load GLB model with drei useGLTF
   let gltf: any = null;
@@ -214,17 +213,41 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           category,
         });
 
-        // 1. CORONARY ARTERY VESSELS (LAD, LCX, RCA)
-        if (category === 'LAD' || category === 'LCX' || category === 'RCA') {
-          const vKey = category as VesselKey;
+        // 1. CORONARY ARTERY VESSELS (LAD, LCX, RCA & ANATOMICAL ARTERY BRANCHES)
+        const isRawCoronary =
+          category === 'LAD' ||
+          category === 'LCX' ||
+          category === 'RCA' ||
+          ((/coronary.*artery|marginal.*artery|interventricular.*artery|stem of left coronary/i.test(name) ||
+            /MM420|MM422|MM423|MM424|MM425|MM426|MM428|MM430|MM431|MM432|MM433|MM434|MM436|MM437|MM438|MM439|MM440|MM441|MM443|MM444|MM445|MM556|MM557|MM610|MM635/i.test(name)) &&
+            !/bundle|trabecula|sinus|vein/i.test(name) &&
+            !aortaRegex.test(name) &&
+            !pulmonaryRegex.test(name));
+
+        if (isRawCoronary) {
+          const isLcx =
+            category === 'LCX' ||
+            /circumflex|marginal.*left|MM426|MM428|MM430|MM610|MM635/i.test(name);
+          const isRca =
+            category === 'RCA' ||
+            /right.*coronary|marginal.*right|MM436|MM437|MM438|MM439|MM440|MM441|MM443|MM444|MM445|MM556/i.test(name);
+          const vKey: VesselKey = isLcx ? 'LCX' : isRca ? 'RCA' : 'LAD';
+
+          const initProb = effectivePredictions?.[vKey]?.probability ?? 0.25;
+          const initRgb = riskColor3(initProb);
+
+          // Rich PBR material for coronary arteries: stands off myocardium with polygon offset & sharp clearcoat
           const mat = new THREE.MeshPhysicalMaterial({
-            color: '#16a34a',
-            emissive: '#16a34a',
-            emissiveIntensity: 0.9,
-            roughness: 0.28,
-            metalness: 0.12,
-            clearcoat: 0.65,
-            clearcoatRoughness: 0.15,
+            color: new THREE.Color(initRgb.r, initRgb.g, initRgb.b),
+            emissive: new THREE.Color(initRgb.r, initRgb.g, initRgb.b),
+            emissiveIntensity: 1.4 + Math.pow(initProb, 1.3) * 3.5,
+            roughness: 0.16,
+            metalness: 0.04,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.05,
+            polygonOffset: true,
+            polygonOffsetFactor: -4,
+            polygonOffsetUnits: -4,
             side: THREE.FrontSide,
           });
 
@@ -232,47 +255,51 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           mesh.userData.vesselKey = vKey;
           mesh.userData.isCoronaryVessel = true;
           mesh.userData.originalMaterial = mat;
+          mesh.visible = true;
+          // Scale slightly outward so arteries physically pop and stand off the muscle surface
+          mesh.scale.set(1.025, 1.025, 1.025);
+          mesh.renderOrder = 10;
           vesselMaterials.current[vKey].push(mat);
 
           vesselAccumulators[vKey].sum.add(transformedCenter);
           vesselAccumulators[vKey].count++;
         }
-        // 2. GREAT ARTERIES: ASCENDING AORTA
+        // 2. GREAT ARTERIES: ASCENDING AORTA (Anatomical arterial burgundy)
         else if (aortaRegex.test(name)) {
           const mat = new THREE.MeshPhysicalMaterial({
-            color: '#a84e5b',
-            roughness: 0.48,
+            color: '#84202e',
+            roughness: 0.38,
             metalness: 0.04,
-            clearcoat: 0.32,
-            clearcoatRoughness: 0.25,
+            clearcoat: 0.75,
+            clearcoatRoughness: 0.15,
             side: THREE.FrontSide,
           });
           mesh.material = mat;
           mesh.userData.originalMaterial = mat;
           myoMaterials.current.push(mat);
         }
-        // 3. GREAT ARTERIES: PULMONARY TRUNK
+        // 3. GREAT ARTERIES: PULMONARY TRUNK (Deep deoxygenated cobalt)
         else if (pulmonaryRegex.test(name)) {
           const mat = new THREE.MeshPhysicalMaterial({
-            color: '#6a2638',
-            roughness: 0.50,
-            metalness: 0.03,
-            clearcoat: 0.30,
-            clearcoatRoughness: 0.25,
+            color: '#1c426e',
+            roughness: 0.40,
+            metalness: 0.04,
+            clearcoat: 0.70,
+            clearcoatRoughness: 0.18,
             side: THREE.FrontSide,
           });
           mesh.material = mat;
           mesh.userData.originalMaterial = mat;
           myoMaterials.current.push(mat);
         }
-        // 4. VENOUS VESSELS (CARDIAC VEINS & CORONARY SINUS)
+        // 4. VENOUS VESSELS (CARDIAC VEINS & CORONARY SINUS - DEEP VENOUS BLUE)
         else if (veinRegex.test(name)) {
           const mat = new THREE.MeshPhysicalMaterial({
-            color: '#244062',
-            roughness: 0.44,
-            metalness: 0.06,
-            clearcoat: 0.35,
-            clearcoatRoughness: 0.2,
+            color: '#183659',
+            roughness: 0.38,
+            metalness: 0.05,
+            clearcoat: 0.72,
+            clearcoatRoughness: 0.15,
             side: THREE.FrontSide,
           });
           mesh.material = mat;
@@ -291,25 +318,28 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
           mesh.userData.originalMaterial = mat;
           myoMaterials.current.push(mat as any);
         }
-        // 6. LIVING MYOCARDIUM & CHAMBER WALLS (COHERENT SOLID ORGAN)
+        // 6. LIVING MYOCARDIUM & CHAMBER WALLS (REALISTIC DEEP RED PBR, WET SHEEN)
         else {
           const isAtrium = /atrium|auricle/i.test(name);
           const isSeptum = category === 'SEPTUM';
 
-          const myoColor = isAtrium ? '#922837' : isSeptum ? '#781622' : '#841e2b';
+          // Realistic deep red anatomical palette for living blood-perfused muscle
+          const myoColor = isAtrium ? '#721522' : isSeptum ? '#5a0d17' : '#68121e';
 
           const mat = new THREE.MeshPhysicalMaterial({
             color: myoColor,
-            roughness: 0.54,
+            roughness: 0.32,
             metalness: 0.02,
-            clearcoat: 0.32,
-            clearcoatRoughness: 0.28,
-            transmission: 0, // Solid opaque living tissue (no hollow glass)
-            ior: 1.4,
+            clearcoat: 0.88,               // Wet pericardial fluid sheen
+            clearcoatRoughness: 0.10,      // Sharp glistening wet specular reflection
+            sheen: 0.45,
+            sheenColor: '#801626',
+            transmission: 0,               // Solid opaque living organ tissue
+            ior: 1.45,
             normalMap: organicNormal,
             normalScale: new THREE.Vector2(0.18, 0.18),
             roughnessMap: organicRoughness,
-            side: THREE.FrontSide, // Strict front-face culling
+            side: THREE.FrontSide,         // Strict front-face culling
           });
 
           mesh.material = mat;
@@ -457,7 +487,6 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
   useFrame((state, delta) => {
     if (selectedNodeId) return;
 
-    const lerpSpeed = delta * 4.5;
     const time = state.clock.getElapsedTime();
 
     // 1. Smooth Angiogram Transition (~1s glide both ways)
@@ -498,6 +527,8 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
 
     // 2. Coronary Artery Vessel Risk Color LERPing (MODE_A)
     if (detectedMode === 'MODE_A') {
+      const lerpSpeed = Math.min(1, delta * 6.0); // ~500ms smooth LERP convergence
+
       (['LAD', 'LCX', 'RCA'] as VesselKey[]).forEach((vKey) => {
         const mats = vesselMaterials.current[vKey];
         if (!mats || mats.length === 0) return;
@@ -515,21 +546,25 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
         const isSelected = selectedVessel === vKey;
         const isHovered = hoveredVessel === vKey;
 
-        // In Angiogram Mode: intense fluoroscopic contrast dye luminescence (3.0 - 4.8)
-        let intensity = isAngiogramMode
-          ? 3.2 + prob * 1.6
-          : prob > 0.66
-          ? 1.6
-          : prob > 0.33
-          ? 0.9
-          : 0.5;
+        // Scaling emissive intensity with probability so high-risk vessels visibly glow:
+        // Low risk (0.23 LCX): ~1.5 (crisp, clearly green)
+        // Mid risk (0.50): ~2.6 (luminous amber)
+        // High risk (0.94 LAD): ~4.6 (hot red glow with soft bloom that commands the room)
+        let intensity = 1.4 + Math.pow(prob, 1.3) * 3.5;
 
-        if (isSelected) intensity += 0.8;
+        if (isAngiogramMode) {
+          intensity = 3.2 + prob * 1.8;
+        } else if (isSelected) {
+          intensity += 0.8;
+        } else if (selectedVessel !== null) {
+          intensity *= 0.85;
+        }
+
         if (isHovered) intensity += 0.6;
 
-        // Slow emissive pulse for high-risk vessels (> 0.66)
-        if (prob > 0.66 && quality !== 'performance') {
-          intensity += Math.sin(time * 3.5) * 0.45 + 0.45;
+        // Organic rhythmic cardiac pulse for high-risk vessels (> 0.60)
+        if (prob > 0.60 && quality !== 'performance') {
+          intensity += (Math.sin(time * 3.8) * 0.5 + 0.5) * 0.85;
         }
 
         mats.forEach((mat) => {
@@ -540,20 +575,7 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
       });
     }
 
-    // 3. Whole-Heart (CAD) Faint Overall Myocardium Tint (when in Anatomy mode)
-    if (!isAngiogramMode && selectedVessel === null && myoMaterials.current.length > 0 && angioT < 0.05) {
-      const cadProb = effectivePredictions?.CAD?.probability ?? 0.2;
-      const cadRgb = riskColor3(cadProb);
-
-      targetMyoColor.current.set('#8d1e2d').lerp(new THREE.Color(cadRgb.r, cadRgb.g, cadRgb.b), 0.22);
-      currentMyoColor.current.lerp(targetMyoColor.current, lerpSpeed);
-
-      myoMaterials.current.forEach((mat) => {
-        mat.color.copy(currentMyoColor.current);
-      });
-    }
-
-    // 4. Subtle Continuous Heartbeat Scale-Pulse (~68 BPM = 1.133 Hz) in Anatomy Mode
+    // 3. Subtle Continuous Heartbeat Scale-Pulse (~68 BPM = 1.133 Hz) in Anatomy Mode
     if (isBeating && quality !== 'performance') {
       const bpm = 68;
       const cycle = (time * (bpm / 60) * Math.PI * 2) % (Math.PI * 2);
@@ -617,8 +639,34 @@ export const HeartModelLoader: React.FC<HeartModelLoaderProps> = ({
         onPointerOut={handlePointerOut}
       />
 
-      {/* HIGH-CONTRAST 3D CORONARY ARTERY VASCULAR TREE (LAD, LCX, RCA) */}
-      <CoronaryVessels predictionsOverride={effectivePredictions} />
+      {/* Procedural Catmull-Rom vascular tree for fallback MODE_B */}
+      {detectedMode === 'MODE_B' && (
+        <CoronaryVessels predictionsOverride={effectivePredictions} />
+      )}
+
+      {/* Localized Stenosis & Atherosclerotic Plaque Cue at LAD Lesion Site (MODE_A) */}
+      {detectedMode === 'MODE_A' && (effectivePredictions?.LAD?.probability ?? 0) > 0.35 && (
+        <group position={[0.44, 0.18, 0.36]} name="LAD_Stenosis_Lesion_Cue">
+          {/* Constriction ring around the lesion */}
+          <mesh rotation={[0.42, 0.85, -0.55]} renderOrder={16}>
+            <torusGeometry args={[0.072, 0.026, 16, 32]} />
+            <meshPhysicalMaterial
+              color="#fbbf24"
+              emissive="#d97706"
+              emissiveIntensity={1.4 + (effectivePredictions?.LAD?.probability ?? 0) * 1.8}
+              roughness={0.22}
+              metalness={0.12}
+              clearcoat={0.92}
+              clearcoatRoughness={0.08}
+            />
+          </mesh>
+          {/* Subtle localized plaque beacon / pulse */}
+          <mesh rotation={[0.42, 0.85, -0.55]} scale={1.25} renderOrder={17}>
+            <torusGeometry args={[0.076, 0.008, 12, 24]} />
+            <meshBasicMaterial color="#f59e0b" transparent opacity={0.4} />
+          </mesh>
+        </group>
+      )}
 
       {/* Virtual Target Groups for Registry */}
       <group ref={ladGroupRef} position={vesselCentroids.LAD} name="Target_LAD" />

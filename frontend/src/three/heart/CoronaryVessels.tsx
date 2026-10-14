@@ -112,7 +112,6 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
 
   const [isHovered, setIsHovered] = useState<boolean>(false);
 
@@ -156,40 +155,65 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
 
   // Stenotic constricted tube geometry dynamically adapting to probability
   const mainGeometry = useMemo(() => {
-    return createStenoticTubeGeometry(mainCurve, 56, anchorConfig.radius, 14, probability);
+    return createStenoticTubeGeometry(mainCurve, 64, anchorConfig.radius, 16, probability);
   }, [mainCurve, anchorConfig.radius, probability]);
+
+  // Localized plaque lesion epicenter coordinates at t = 0.42
+  const lesionPoint = useMemo(() => mainCurve.getPointAt(0.42), [mainCurve]);
+  const lesionTangent = useMemo(() => mainCurve.getTangentAt(0.42), [mainCurve]);
+  const lesionRotation = useMemo(() => {
+    const up = new THREE.Vector3(0, 1, 0);
+    const quat = new THREE.Quaternion().setFromUnitVectors(up, lesionTangent.clone().normalize());
+    const euler = new THREE.Euler().setFromQuaternion(quat);
+    return [euler.x, euler.y, euler.z] as [number, number, number];
+  }, [lesionTangent]);
 
   // Build side diagonal / marginal branch geometries
   const branchGeometries = useMemo(() => {
     return anchorConfig.branches.map((bPoints) => {
       const v3 = bPoints.map((p) => new THREE.Vector3(...p));
       const c = new THREE.CatmullRomCurve3(v3, false, 'centripetal');
-      return new THREE.TubeGeometry(c, 28, anchorConfig.radius * 0.68, 10, false);
+      return new THREE.TubeGeometry(c, 32, anchorConfig.radius * 0.72, 12, false);
     });
   }, [anchorConfig.branches, anchorConfig.radius]);
 
-  // Reusable Color instances for zero GC per frame
-  const currentColor = useRef(new THREE.Color('#334155'));
-  const currentEmissive = useRef(new THREE.Color('#1e293b'));
-  const targetColor = useRef(new THREE.Color('#334155'));
-  const targetEmissive = useRef(new THREE.Color('#1e293b'));
+  // Single shared physical material across main artery tube and side branchlets
+  // Ensures trunk and branches update emissive color and glow in perfect synchronization
+  const sharedMaterial = useMemo(() => {
+    const rgb = riskColor3(probability);
+    return new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(rgb.r, rgb.g, rgb.b),
+      emissive: new THREE.Color(rgb.r, rgb.g, rgb.b),
+      emissiveIntensity: 1.4,
+      roughness: 0.16,
+      metalness: 0.04,
+      clearcoat: 0.95,
+      clearcoatRoughness: 0.06,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    });
+  }, []); // Reusable material instance across frames
+
+  // Reusable Color and Float instances for zero GC per frame
+  const initRgb = riskColor3(probability);
+  const currentColor = useRef(new THREE.Color(initRgb.r, initRgb.g, initRgb.b));
+  const currentEmissive = useRef(new THREE.Color(initRgb.r, initRgb.g, initRgb.b));
+  const targetColor = useRef(new THREE.Color(initRgb.r, initRgb.g, initRgb.b));
+  const targetEmissive = useRef(new THREE.Color(initRgb.r, initRgb.g, initRgb.b));
+  const currentIntensity = useRef<number>(1.4);
+  const targetIntensity = useRef<number>(1.4);
   const introStartTime = useRef<number | null>(null);
 
   const { isIntroPlaying, introKey } = useAppStore();
 
   useEffect(() => {
     introStartTime.current = null;
-    if (isIntroPlaying) {
-      currentColor.current.set('#334155');
-      currentEmissive.current.set('#1e293b');
-    }
-  }, [introKey, isIntroPlaying]);
+  }, [introKey]);
 
   useFrame((state, delta) => {
-    if (!materialRef.current) return;
-
-    let intensity: number;
     const isIntro = isIntroPlaying && quality !== 'performance';
+    let baseIntensity: number;
 
     if (isIntro) {
       if (introStartTime.current === null) {
@@ -197,11 +221,11 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
       }
       const elapsed = state.clock.getElapsedTime() - introStartTime.current;
 
-      // Sequential ignition windows: LAD (0.35s - 1.1s) -> LCX (0.95s - 1.7s) -> RCA (1.55s - 2.3s)
+      // Sequential ignition windows: LAD (0.2s - 0.9s) -> LCX (0.8s - 1.5s) -> RCA (1.4s - 2.1s)
       const schedule: Record<VesselKey, { start: number; duration: number }> = {
-        LAD: { start: 0.35, duration: 0.75 },
-        LCX: { start: 0.95, duration: 0.75 },
-        RCA: { start: 1.55, duration: 0.75 },
+        LAD: { start: 0.2, duration: 0.7 },
+        LCX: { start: 0.8, duration: 0.7 },
+        RCA: { start: 1.4, duration: 0.7 },
       };
 
       const { start, duration } = schedule[vesselKey];
@@ -212,59 +236,66 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
       if (elapsed < start) {
         targetColor.current.copy(greyColor);
         targetEmissive.current.setRGB(0.04, 0.06, 0.1);
-        intensity = 0.2;
+        baseIntensity = 0.3;
       } else if (elapsed < start + duration) {
         const p = (elapsed - start) / duration;
         const ease = 1 - Math.cos(p * Math.PI * 0.5);
         targetColor.current.copy(greyColor).lerp(activeColor, ease);
         targetEmissive.current.copy(greyColor).lerp(activeColor, ease);
-        // Dramatic ignition flare pulse
-        const flare = Math.sin(p * Math.PI) * 1.8;
-        intensity = 0.4 + ease * 1.8 + flare;
+        const flare = Math.sin(p * Math.PI) * 2.2;
+        baseIntensity = 0.5 + ease * 2.0 + flare;
       } else {
         targetColor.current.copy(activeColor);
         targetEmissive.current.copy(activeColor);
-        intensity = 1.6 + probability * 0.6;
+        baseIntensity = 1.4 + Math.pow(probability, 1.3) * 3.2;
       }
-
-      currentColor.current.lerp(targetColor.current, delta * 7.0);
-      currentEmissive.current.lerp(targetEmissive.current, delta * 7.0);
     } else {
-      // Read continuous target risk color (green -> amber -> red)
+      // Direct continuous risk color mapping: green #16a34a -> amber #f59e0b -> red #dc2626
       const rgb = riskColor3(probability);
       targetColor.current.setRGB(rgb.r, rgb.g, rgb.b);
       targetEmissive.current.setRGB(rgb.r, rgb.g, rgb.b);
 
-      // Smooth LERP transition (~400ms)
-      const lerpSpeed = delta * 5.0;
-      currentColor.current.lerp(targetColor.current, lerpSpeed);
-      currentEmissive.current.lerp(targetEmissive.current, lerpSpeed);
+      // Emissive Intensity scales with risk probability:
+      // Low (0.23 LCX): ~1.5 (crisp, clearly green)
+      // Mid (0.50): ~2.6 (luminous amber)
+      // High (0.94 LAD): ~4.2 (hot red glow that blooms and commands the room!)
+      baseIntensity = 1.3 + Math.pow(probability, 1.3) * 3.2;
 
       if (isAngiogramMode) {
-        intensity = 2.8 + probability * 1.4;
-      } else if (isWholeHeart) {
-        intensity = probability > 0.66 ? 2.0 : probability > 0.33 ? 1.5 : 1.2;
+        baseIntensity = 3.2 + probability * 1.8;
       } else if (isSelected) {
-        intensity = 2.4 + probability * 0.8;
-      } else {
-        intensity = 0.9;
+        baseIntensity += 0.8;
+      } else if (!isWholeHeart) {
+        baseIntensity *= 0.88;
       }
 
       if (isHovered) {
-        intensity += 0.6;
+        baseIntensity += 0.5;
       }
 
-      // High-risk vessel soft organic rhythmic pulse
-      if (probability > 0.66 && quality !== 'performance') {
+      // High-risk vessel organic rhythmic pulse (> 0.60)
+      if (probability > 0.60 && quality !== 'performance') {
         const time = state.clock.getElapsedTime();
-        const pulse = Math.sin(time * 4.0) * 0.4 + 0.4;
-        intensity += pulse;
+        const pulse = Math.sin(time * 3.8) * 0.5 + 0.5;
+        baseIntensity += pulse * 0.85;
       }
     }
 
-    materialRef.current.color.copy(currentColor.current);
-    materialRef.current.emissive.copy(currentEmissive.current);
-    materialRef.current.emissiveIntensity = intensity;
+    targetIntensity.current = baseIntensity;
+
+    // Smooth LERP transition (~500ms: delta * 6.0 gives 95% convergence in ~500ms)
+    const lerpSpeed = Math.min(1, delta * 6.0);
+    currentColor.current.lerp(targetColor.current, lerpSpeed);
+    currentEmissive.current.lerp(targetEmissive.current, lerpSpeed);
+    currentIntensity.current = THREE.MathUtils.lerp(
+      currentIntensity.current,
+      targetIntensity.current,
+      lerpSpeed
+    );
+
+    sharedMaterial.color.copy(currentColor.current);
+    sharedMaterial.emissive.copy(currentEmissive.current);
+    sharedMaterial.emissiveIntensity = currentIntensity.current;
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -294,50 +325,53 @@ export const VesselBranch: React.FC<VesselBranchProps> = ({
 
   return (
     <group ref={groupRef} name={`CoronaryBranch_${vesselKey}`}>
-      {/* Main Artery Tube Mesh with Stenotic Pinch */}
+      {/* Main Artery Tube Mesh with Stenotic Constriction */}
       <mesh
         ref={meshRef}
         geometry={mainGeometry}
+        material={sharedMaterial}
+        renderOrder={10}
         onClick={handleClick}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
-      >
-        <meshPhysicalMaterial
-          ref={materialRef}
-          color="#16a34a"
-          emissive="#16a34a"
-          emissiveIntensity={1.4}
-          roughness={0.22}
-          metalness={0.12}
-          clearcoat={0.9}
-          clearcoatRoughness={0.1}
-        />
-      </mesh>
+      />
 
-      {/* Side Artery Branchlets */}
+      {/* Side Artery Branchlets (Sharing material for synchronous glow) */}
       {branchGeometries.map((bGeom, idx) => (
         <mesh
           key={idx}
           geometry={bGeom}
+          material={sharedMaterial}
+          renderOrder={9}
           onClick={handleClick}
           onPointerOver={handlePointerOver}
           onPointerOut={handlePointerOut}
+        />
+      ))}
+
+      {/* Localized Atherosclerotic Plaque Cue at Lesion Site (u ~ 0.42) */}
+      {probability > 0.35 && (
+        <mesh
+          position={[lesionPoint.x, lesionPoint.y, lesionPoint.z]}
+          rotation={lesionRotation}
+          renderOrder={12}
         >
+          <torusGeometry args={[anchorConfig.radius * 0.94, anchorConfig.radius * 0.28, 12, 24]} />
           <meshPhysicalMaterial
-            color={currentColor.current}
-            emissive={currentEmissive.current}
-            emissiveIntensity={materialRef.current?.emissiveIntensity ?? 1.2}
-            roughness={0.22}
+            color="#fbbf24"
+            emissive="#d97706"
+            emissiveIntensity={1.2 + probability * 1.6}
+            roughness={0.24}
             metalness={0.12}
-            clearcoat={0.85}
-            clearcoatRoughness={0.12}
+            clearcoat={0.92}
+            clearcoatRoughness={0.08}
           />
         </mesh>
-      ))}
+      )}
 
       {/* Selection Highlight Halo Wireframe */}
       {isSelected && (
-        <mesh geometry={mainGeometry} scale={1.25}>
+        <mesh geometry={mainGeometry} scale={1.25} renderOrder={15}>
           <meshBasicMaterial
             color="#2dd4bf"
             wireframe

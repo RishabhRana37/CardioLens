@@ -11,7 +11,7 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
   const groupRef = useRef<THREE.Group>(null);
   const myocardiumMatRef = useRef<THREE.MeshPhysicalMaterial>(null);
 
-  const { quality, predictions, selectedVessel, isAngiogramMode } = useAppStore();
+  const { quality, isAngiogramMode } = useAppStore();
   const angioTransition = useRef<number>(0);
 
   // Color palette matching the anatomical illustration
@@ -20,9 +20,6 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
   const aortaColor = useMemo(() => new THREE.Color('#9e1b2e'), []);
   const pulmonaryBlue = useMemo(() => new THREE.Color('#1e5b9e'), []);
   const auricleColor = useMemo(() => new THREE.Color('#a89050'), []); // Ochre/tan auricle tissue
-
-  // Compute slight tint on overall CAD status if whole-heart view active
-  const cadProb = predictions?.CAD?.probability ?? 0.2;
 
   // Aortic Arch curve matching sticker
   const aorticCurve = useMemo(() => {
@@ -107,11 +104,7 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
       if (t > 0.01) {
         myocardiumMatRef.current.color.lerp(new THREE.Color('#030712'), t);
       } else {
-        if (selectedVessel === null && cadProb > 0.6) {
-          targetMyoColor.set('#b53846').lerp(new THREE.Color('#dc2626'), (cadProb - 0.6) * 0.5);
-        } else {
-          targetMyoColor.copy(baseMyoColor);
-        }
+        targetMyoColor.copy(baseMyoColor);
         myocardiumMatRef.current.color.lerp(targetMyoColor, delta * 3);
       }
     }
@@ -127,13 +120,13 @@ export const ProceduralHeart: React.FC<ProceduralHeartProps> = ({ isBeating = tr
         <coneGeometry args={[0.88, 1.65, 32, 16]} />
         <meshPhysicalMaterial
           ref={myocardiumMatRef}
-          color="#b53846"
-          roughness={0.42}
-          metalness={0.06}
-          clearcoat={0.65}
-          clearcoatRoughness={0.25}
-          sheen={0.8}
-          sheenColor="#e11d48"
+          color="#68121e"
+          roughness={0.32}
+          metalness={0.02}
+          clearcoat={0.88}
+          clearcoatRoughness={0.10}
+          sheen={0.5}
+          sheenColor="#801626"
         />
       </mesh>
 
