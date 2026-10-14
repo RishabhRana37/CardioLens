@@ -1,0 +1,424 @@
+{
+  "Age": {
+    "type": "numeric",
+    "mean": 58.9,
+    "std": 10.39,
+    "median": 58.0,
+    "min": 30.0,
+    "max": 86.0,
+    "q25": 51.0,
+    "q75": 66.0,
+    "display": "Mean 58.9 (SD 10.4)"
+  },
+  "Weight": {
+    "type": "numeric",
+    "mean": 73.83,
+    "std": 11.99,
+    "median": 74.0,
+    "min": 48.0,
+    "max": 120.0,
+    "q25": 65.0,
+    "q75": 81.0,
+    "display": "Mean 73.8 (SD 12.0)"
+  },
+  "Height": {
+    "type": "numeric",
+    "mean": 164.72,
+    "std": 9.33,
+    "median": 165.0,
+    "min": 140.0,
+    "max": 188.0,
+    "q25": 158.0,
+    "q75": 171.0,
+    "display": "Mean 164.7 (SD 9.3)"
+  },
+  "BMI": {
+    "type": "numeric",
+    "mean": 27.25,
+    "std": 4.1,
+    "median": 26.78,
+    "min": 18.12,
+    "max": 40.9,
+    "q25": 24.51,
+    "q75": 29.41,
+    "display": "Mean 27.2 (SD 4.1)"
+  },
+  "BP": {
+    "type": "numeric",
+    "mean": 129.55,
+    "std": 18.94,
+    "median": 130.0,
+    "min": 90.0,
+    "max": 190.0,
+    "q25": 120.0,
+    "q75": 140.0,
+    "display": "Mean 129.6 (SD 18.9)"
+  },
+  "PR": {
+    "type": "numeric",
+    "mean": 75.14,
+    "std": 8.91,
+    "median": 70.0,
+    "min": 50.0,
+    "max": 110.0,
+    "q25": 70.0,
+    "q75": 80.0,
+    "display": "Mean 75.1 (SD 8.9)"
+  },
+  "FBS": {
+    "type": "numeric",
+    "mean": 119.18,
+    "std": 52.08,
+    "median": 98.0,
+    "min": 62.0,
+    "max": 400.0,
+    "q25": 88.5,
+    "q75": 130.0,
+    "display": "Mean 119.2 (SD 52.1)"
+  },
+  "Cr": {
+    "type": "numeric",
+    "mean": 1.06,
+    "std": 0.26,
+    "median": 1.0,
+    "min": 0.5,
+    "max": 2.2,
+    "q25": 0.9,
+    "q75": 1.2,
+    "display": "Mean 1.1 (SD 0.3)"
+  },
+  "TG": {
+    "type": "numeric",
+    "mean": 150.34,
+    "std": 97.96,
+    "median": 122.0,
+    "min": 37.0,
+    "max": 1050.0,
+    "q25": 90.0,
+    "q75": 177.0,
+    "display": "Mean 150.3 (SD 98.0)"
+  },
+  "LDL": {
+    "type": "numeric",
+    "mean": 104.64,
+    "std": 35.4,
+    "median": 100.0,
+    "min": 18.0,
+    "max": 232.0,
+    "q25": 80.0,
+    "q75": 122.0,
+    "display": "Mean 104.6 (SD 35.4)"
+  },
+  "HDL": {
+    "type": "numeric",
+    "mean": 40.23,
+    "std": 10.56,
+    "median": 39.0,
+    "min": 15.9,
+    "max": 111.0,
+    "q25": 33.5,
+    "q75": 45.5,
+    "display": "Mean 40.2 (SD 10.6)"
+  },
+  "BUN": {
+    "type": "numeric",
+    "mean": 17.5,
+    "std": 6.96,
+    "median": 16.0,
+    "min": 6.0,
+    "max": 52.0,
+    "q25": 13.0,
+    "q75": 20.0,
+    "display": "Mean 17.5 (SD 7.0)"
+  },
+  "ESR": {
+    "type": "numeric",
+    "mean": 19.46,
+    "std": 15.94,
+    "median": 15.0,
+    "min": 1.0,
+    "max": 90.0,
+    "q25": 9.0,
+    "q75": 26.0,
+    "display": "Mean 19.5 (SD 15.9)"
+  },
+  "HB": {
+    "type": "numeric",
+    "mean": 13.15,
+    "std": 1.61,
+    "median": 13.2,
+    "min": 8.9,
+    "max": 17.6,
+    "q25": 12.2,
+    "q75": 14.2,
+    "display": "Mean 13.2 (SD 1.6)"
+  },
+  "K": {
+    "type": "numeric",
+    "mean": 4.23,
+    "std": 0.46,
+    "median": 4.2,
+    "min": 3.0,
+    "max": 6.6,
+    "q25": 3.9,
+    "q75": 4.5,
+    "display": "Mean 4.2 (SD 0.5)"
+  },
+  "Na": {
+    "type": "numeric",
+    "mean": 141.0,
+    "std": 3.81,
+    "median": 141.0,
+    "min": 128.0,
+    "max": 156.0,
+    "q25": 139.0,
+    "q75": 143.0,
+    "display": "Mean 141.0 (SD 3.8)"
+  },
+  "WBC": {
+    "type": "numeric",
+    "mean": 7562.05,
+    "std": 2413.74,
+    "median": 7100.0,
+    "min": 3700.0,
+    "max": 18000.0,
+    "q25": 5800.0,
+    "q75": 8800.0,
+    "display": "Mean 7562.0 (SD 2413.7)"
+  },
+  "Lymph": {
+    "type": "numeric",
+    "mean": 32.4,
+    "std": 9.97,
+    "median": 32.0,
+    "min": 7.0,
+    "max": 60.0,
+    "q25": 26.0,
+    "q75": 39.0,
+    "display": "Mean 32.4 (SD 10.0)"
+  },
+  "Neut": {
+    "type": "numeric",
+    "mean": 60.15,
+    "std": 10.18,
+    "median": 60.0,
+    "min": 32.0,
+    "max": 89.0,
+    "q25": 52.5,
+    "q75": 67.0,
+    "display": "Mean 60.1 (SD 10.2)"
+  },
+  "PLT": {
+    "type": "numeric",
+    "mean": 221.49,
+    "std": 60.8,
+    "median": 210.0,
+    "min": 25.0,
+    "max": 742.0,
+    "q25": 183.5,
+    "q75": 250.0,
+    "display": "Mean 221.5 (SD 60.8)"
+  },
+  "EF-TTE": {
+    "type": "numeric",
+    "mean": 47.23,
+    "std": 8.93,
+    "median": 50.0,
+    "min": 15.0,
+    "max": 60.0,
+    "q25": 45.0,
+    "q75": 55.0,
+    "display": "Mean 47.2 (SD 8.9)"
+  },
+  "Function Class": {
+    "type": "ordinal",
+    "mean": 0.66,
+    "std": 1.03,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 3.0,
+    "q25": 0.0,
+    "q75": 2.0,
+    "display": "Mean 0.7 (SD 1.0)"
+  },
+  "Region with RWMA": {
+    "type": "ordinal",
+    "mean": 0.62,
+    "std": 1.13,
+    "median": 0.0,
+    "min": 0.0,
+    "max": 4.0,
+    "q25": 0.0,
+    "q75": 1.0,
+    "display": "Mean 0.6 (SD 1.1)"
+  },
+  "Sex": {
+    "type": "binary",
+    "prevalence": 0.581,
+    "display": "58.1% prevalence (176/303)"
+  },
+  "DM": {
+    "type": "binary",
+    "prevalence": 0.297,
+    "display": "29.7% prevalence (90/303)"
+  },
+  "HTN": {
+    "type": "binary",
+    "prevalence": 0.591,
+    "display": "59.1% prevalence (179/303)"
+  },
+  "Current Smoker": {
+    "type": "binary",
+    "prevalence": 0.208,
+    "display": "20.8% prevalence (63/303)"
+  },
+  "Ex-Smoker": {
+    "type": "binary",
+    "prevalence": 0.033,
+    "display": "3.3% prevalence (10/303)"
+  },
+  "FH": {
+    "type": "binary",
+    "prevalence": 0.158,
+    "display": "15.8% prevalence (48/303)"
+  },
+  "Obesity": {
+    "type": "binary",
+    "prevalence": 0.696,
+    "display": "69.6% prevalence (211/303)"
+  },
+  "CRF": {
+    "type": "binary",
+    "prevalence": 0.02,
+    "display": "2.0% prevalence (6/303)"
+  },
+  "CVA": {
+    "type": "binary",
+    "prevalence": 0.017,
+    "display": "1.7% prevalence (5/303)"
+  },
+  "Airway disease": {
+    "type": "binary",
+    "prevalence": 0.036,
+    "display": "3.6% prevalence (11/303)"
+  },
+  "Thyroid Disease": {
+    "type": "binary",
+    "prevalence": 0.023,
+    "display": "2.3% prevalence (7/303)"
+  },
+  "CHF": {
+    "type": "binary",
+    "prevalence": 0.003,
+    "display": "0.3% prevalence (1/303)"
+  },
+  "DLP": {
+    "type": "binary",
+    "prevalence": 0.37,
+    "display": "37.0% prevalence (112/303)"
+  },
+  "Edema": {
+    "type": "binary",
+    "prevalence": 0.04,
+    "display": "4.0% prevalence (12/303)"
+  },
+  "Weak Peripheral Pulse": {
+    "type": "binary",
+    "prevalence": 0.017,
+    "display": "1.7% prevalence (5/303)"
+  },
+  "Lung rales": {
+    "type": "binary",
+    "prevalence": 0.036,
+    "display": "3.6% prevalence (11/303)"
+  },
+  "Systolic Murmur": {
+    "type": "binary",
+    "prevalence": 0.135,
+    "display": "13.5% prevalence (41/303)"
+  },
+  "Diastolic Murmur": {
+    "type": "binary",
+    "prevalence": 0.03,
+    "display": "3.0% prevalence (9/303)"
+  },
+  "Typical Chest Pain": {
+    "type": "binary",
+    "prevalence": 0.541,
+    "display": "54.1% prevalence (164/303)"
+  },
+  "Dyspnea": {
+    "type": "binary",
+    "prevalence": 0.442,
+    "display": "44.2% prevalence (134/303)"
+  },
+  "Atypical": {
+    "type": "binary",
+    "prevalence": 0.307,
+    "display": "30.7% prevalence (93/303)"
+  },
+  "Nonanginal CP": {
+    "type": "binary",
+    "prevalence": 0.053,
+    "display": "5.3% prevalence (16/303)"
+  },
+  "Exertional CP": {
+    "type": "binary",
+    "prevalence": 0.0,
+    "display": "0.0% prevalence (0/303)"
+  },
+  "LowTH Ang": {
+    "type": "binary",
+    "prevalence": 0.007,
+    "display": "0.7% prevalence (2/303)"
+  },
+  "Q Wave": {
+    "type": "binary",
+    "prevalence": 0.053,
+    "display": "5.3% prevalence (16/303)"
+  },
+  "ST Elevation": {
+    "type": "binary",
+    "prevalence": 0.046,
+    "display": "4.6% prevalence (14/303)"
+  },
+  "ST Depression": {
+    "type": "binary",
+    "prevalence": 0.234,
+    "display": "23.4% prevalence (71/303)"
+  },
+  "T inversion": {
+    "type": "binary",
+    "prevalence": 0.297,
+    "display": "29.7% prevalence (90/303)"
+  },
+  "LVH": {
+    "type": "binary",
+    "prevalence": 0.066,
+    "display": "6.6% prevalence (20/303)"
+  },
+  "Poor R Progression": {
+    "type": "binary",
+    "prevalence": 0.03,
+    "display": "3.0% prevalence (9/303)"
+  },
+  "Rhythm": {
+    "type": "nominal",
+    "distribution": {
+      "Sinus (NSR)": 0.931,
+      "LBBB": 0.043,
+      "RBBB": 0.026
+    },
+    "display": "Sinus (NSR): 93%, LBBB: 4%, RBBB: 2%"
+  },
+  "VHD": {
+    "type": "nominal",
+    "distribution": {
+      "Mild": 0.492,
+      "Normal": 0.383,
+      "Moderate": 0.089,
+      "Severe": 0.036
+    },
+    "display": "Mild: 49%, Normal: 38%, Moderate: 8%, Severe: 3%"
+  }
+}
