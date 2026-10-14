@@ -1,0 +1,362 @@
+{
+  "CAD": {
+    "accuracy": 0.8647,
+    "precision": 0.907,
+    "recall": 0.9028,
+    "f1": 0.9049,
+    "roc_auc": 0.9243,
+    "cv": {
+      "roc_auc_mean": 0.9247,
+      "roc_auc_std": 0.0612,
+      "accuracy_mean": 0.8644,
+      "accuracy_std": 0.069,
+      "f1_mean": 0.9037,
+      "f1_std": 0.0514
+    },
+    "candidate_models": {
+      "LogisticRegression_Calibrated": {
+        "roc_auc": 0.9247,
+        "roc_auc_std": 0.0612,
+        "f1": 0.9037,
+        "accuracy": 0.8644
+      },
+      "RandomForest": {
+        "roc_auc": 0.928,
+        "roc_auc_std": 0.055,
+        "f1": 0.8925,
+        "accuracy": 0.8544
+      },
+      "XGBoost": {
+        "roc_auc": 0.8985,
+        "roc_auc_std": 0.0736,
+        "f1": 0.8852,
+        "accuracy": 0.8411
+      }
+    },
+    "plots": {
+      "roc": "/model/plots/CAD_roc.png",
+      "calibration": "/model/plots/CAD_calibration.png",
+      "confusion": "/model/plots/CAD_confusion.png"
+    },
+    "top_features": [
+      {
+        "feature": "Typical Chest Pain",
+        "importance": 1.4292
+      },
+      {
+        "feature": "Region with RWMA",
+        "importance": 0.8495
+      },
+      {
+        "feature": "Age",
+        "importance": 0.6751
+      },
+      {
+        "feature": "T inversion",
+        "importance": 0.6223
+      },
+      {
+        "feature": "FH",
+        "importance": 0.613
+      },
+      {
+        "feature": "DM",
+        "importance": 0.5939
+      },
+      {
+        "feature": "TG",
+        "importance": 0.5795
+      },
+      {
+        "feature": "Dyspnea",
+        "importance": 0.5599
+      },
+      {
+        "feature": "HTN",
+        "importance": 0.5421
+      },
+      {
+        "feature": "Nonanginal CP",
+        "importance": 0.5418
+      },
+      {
+        "feature": "Atypical",
+        "importance": 0.5042
+      },
+      {
+        "feature": "VHD_Normal",
+        "importance": 0.3269
+      }
+    ]
+  },
+  "LAD": {
+    "accuracy": 0.7327,
+    "precision": 0.7637,
+    "recall": 0.7853,
+    "f1": 0.7744,
+    "roc_auc": 0.821,
+    "cv": {
+      "roc_auc_mean": 0.8249,
+      "roc_auc_std": 0.0711,
+      "accuracy_mean": 0.7328,
+      "accuracy_std": 0.0595,
+      "f1_mean": 0.773,
+      "f1_std": 0.0522
+    },
+    "candidate_models": {
+      "LogisticRegression_Calibrated": {
+        "roc_auc": 0.8249,
+        "roc_auc_std": 0.0711,
+        "f1": 0.773,
+        "accuracy": 0.7328
+      },
+      "RandomForest": {
+        "roc_auc": 0.8518,
+        "roc_auc_std": 0.0834,
+        "f1": 0.8353,
+        "accuracy": 0.809
+      },
+      "XGBoost": {
+        "roc_auc": 0.8233,
+        "roc_auc_std": 0.0919,
+        "f1": 0.7931,
+        "accuracy": 0.7628
+      }
+    },
+    "plots": {
+      "roc": "/model/plots/LAD_roc.png",
+      "calibration": "/model/plots/LAD_calibration.png",
+      "confusion": "/model/plots/LAD_confusion.png"
+    },
+    "top_features": [
+      {
+        "feature": "Typical Chest Pain",
+        "importance": 0.8667
+      },
+      {
+        "feature": "Region with RWMA",
+        "importance": 0.6344
+      },
+      {
+        "feature": "Age",
+        "importance": 0.4569
+      },
+      {
+        "feature": "EF-TTE",
+        "importance": 0.3894
+      },
+      {
+        "feature": "T inversion",
+        "importance": 0.3077
+      },
+      {
+        "feature": "Atypical",
+        "importance": 0.2846
+      },
+      {
+        "feature": "HTN",
+        "importance": 0.2507
+      },
+      {
+        "feature": "Nonanginal CP",
+        "importance": 0.247
+      },
+      {
+        "feature": "Dyspnea",
+        "importance": 0.2287
+      },
+      {
+        "feature": "FH",
+        "importance": 0.2281
+      },
+      {
+        "feature": "LDL",
+        "importance": 0.223
+      },
+      {
+        "feature": "PR",
+        "importance": 0.2229
+      }
+    ]
+  },
+  "LCX": {
+    "accuracy": 0.6634,
+    "precision": 0.6076,
+    "recall": 0.4034,
+    "f1": 0.4848,
+    "roc_auc": 0.7148,
+    "cv": {
+      "roc_auc_mean": 0.7163,
+      "roc_auc_std": 0.0968,
+      "accuracy_mean": 0.6642,
+      "accuracy_std": 0.0691,
+      "f1_mean": 0.4819,
+      "f1_std": 0.1241
+    },
+    "candidate_models": {
+      "LogisticRegression_Calibrated": {
+        "roc_auc": 0.7163,
+        "roc_auc_std": 0.0968,
+        "f1": 0.4819,
+        "accuracy": 0.6642
+      },
+      "RandomForest": {
+        "roc_auc": 0.7281,
+        "roc_auc_std": 0.1093,
+        "f1": 0.6059,
+        "accuracy": 0.6708
+      },
+      "XGBoost": {
+        "roc_auc": 0.764,
+        "roc_auc_std": 0.084,
+        "f1": 0.6447,
+        "accuracy": 0.7
+      }
+    },
+    "plots": {
+      "roc": "/model/plots/LCX_roc.png",
+      "calibration": "/model/plots/LCX_calibration.png",
+      "confusion": "/model/plots/LCX_confusion.png"
+    },
+    "top_features": [
+      {
+        "feature": "Age",
+        "importance": 0.4022
+      },
+      {
+        "feature": "Typical Chest Pain",
+        "importance": 0.3266
+      },
+      {
+        "feature": "Na",
+        "importance": 0.1946
+      },
+      {
+        "feature": "FBS",
+        "importance": 0.1642
+      },
+      {
+        "feature": "PLT",
+        "importance": 0.1637
+      },
+      {
+        "feature": "TG",
+        "importance": 0.1612
+      },
+      {
+        "feature": "BP",
+        "importance": 0.1543
+      },
+      {
+        "feature": "Cr",
+        "importance": 0.1399
+      },
+      {
+        "feature": "Function Class",
+        "importance": 0.1252
+      },
+      {
+        "feature": "Height",
+        "importance": 0.1139
+      },
+      {
+        "feature": "DM",
+        "importance": 0.113
+      },
+      {
+        "feature": "Sex",
+        "importance": 0.0997
+      }
+    ]
+  },
+  "RCA": {
+    "accuracy": 0.6634,
+    "precision": 0.575,
+    "recall": 0.4035,
+    "f1": 0.4742,
+    "roc_auc": 0.7195,
+    "cv": {
+      "roc_auc_mean": 0.7356,
+      "roc_auc_std": 0.0496,
+      "accuracy_mean": 0.6632,
+      "accuracy_std": 0.0555,
+      "f1_mean": 0.4614,
+      "f1_std": 0.1177
+    },
+    "candidate_models": {
+      "LogisticRegression_Calibrated": {
+        "roc_auc": 0.7356,
+        "roc_auc_std": 0.0496,
+        "f1": 0.4614,
+        "accuracy": 0.6632
+      },
+      "RandomForest": {
+        "roc_auc": 0.7074,
+        "roc_auc_std": 0.0843,
+        "f1": 0.5855,
+        "accuracy": 0.6694
+      },
+      "XGBoost": {
+        "roc_auc": 0.6866,
+        "roc_auc_std": 0.0779,
+        "f1": 0.5119,
+        "accuracy": 0.6362
+      }
+    },
+    "plots": {
+      "roc": "/model/plots/RCA_roc.png",
+      "calibration": "/model/plots/RCA_calibration.png",
+      "confusion": "/model/plots/RCA_confusion.png"
+    },
+    "top_features": [
+      {
+        "feature": "DM",
+        "importance": 0.6061
+      },
+      {
+        "feature": "Typical Chest Pain",
+        "importance": 0.4625
+      },
+      {
+        "feature": "Age",
+        "importance": 0.4358
+      },
+      {
+        "feature": "Dyspnea",
+        "importance": 0.4038
+      },
+      {
+        "feature": "Sex",
+        "importance": 0.3905
+      },
+      {
+        "feature": "ESR",
+        "importance": 0.3387
+      },
+      {
+        "feature": "TG",
+        "importance": 0.31
+      },
+      {
+        "feature": "Function Class",
+        "importance": 0.2677
+      },
+      {
+        "feature": "Poor R Progression",
+        "importance": 0.2633
+      },
+      {
+        "feature": "Atypical",
+        "importance": 0.2345
+      },
+      {
+        "feature": "Neut",
+        "importance": 0.2309
+      },
+      {
+        "feature": "HTN",
+        "importance": 0.2196
+      }
+    ]
+  }
+}
