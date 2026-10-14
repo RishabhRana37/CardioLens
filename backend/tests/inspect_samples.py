@@ -1,11 +1,14 @@
 import json
+import os
 import re
 from backend.tests.test_export_faithfulness import simulate_js_inference
 
-with open("frontend/src/api/mockData.ts") as f:
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+
+with open(os.path.join(REPO_ROOT, "frontend/src/api/mockData.ts")) as f:
     text = f.read()
 
-with open("frontend/public/model/models.json") as f:
+with open(os.path.join(REPO_ROOT, "frontend/public/model/models.json")) as f:
     models = json.load(f)
 
 # Extract patients from mockData.ts

@@ -9,10 +9,18 @@ import os
 import zipfile
 import pandas as pd
 
-ZIP_PATH = "/tmp/z_alizadeh_411.zip"
-OUTPUT_CSV = "/Users/rana/Documents/CardioLens/backend/data/z_alizadeh_sani.csv"
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+DEFAULT_ZIP_PATH = os.path.join(REPO_ROOT, "backend/data/z_alizadeh_411.zip")
+OUTPUT_CSV = os.path.join(REPO_ROOT, "backend/data/z_alizadeh_sani.csv")
 
-def extract_and_clean_data(zip_path: str = ZIP_PATH, output_csv: str = OUTPUT_CSV) -> pd.DataFrame:
+def extract_and_clean_data(zip_path: str = None, output_csv: str = OUTPUT_CSV) -> pd.DataFrame:
+    if zip_path is None:
+        if os.path.exists(DEFAULT_ZIP_PATH):
+            zip_path = DEFAULT_ZIP_PATH
+        elif os.path.exists("/tmp/z_alizadeh_411.zip"):
+            zip_path = "/tmp/z_alizadeh_411.zip"
+        else:
+            zip_path = DEFAULT_ZIP_PATH
     with zipfile.ZipFile(zip_path) as z:
         for name in z.namelist():
             if name.endswith(".xlsx"):

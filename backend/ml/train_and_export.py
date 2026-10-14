@@ -40,8 +40,9 @@ from xgboost import XGBClassifier
 
 # Constants
 RANDOM_STATE = 42
-DATA_PATH = "/Users/rana/Documents/CardioLens/backend/data/z_alizadeh_sani.csv"
-OUTPUT_DIR = "/Users/rana/Documents/CardioLens/frontend/public/model"
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+DATA_PATH = os.path.join(REPO_ROOT, "backend/data/z_alizadeh_sani.csv")
+OUTPUT_DIR = os.path.join(REPO_ROOT, "frontend/public/model")
 PLOTS_DIR = os.path.join(OUTPUT_DIR, "plots")
 
 os.makedirs(PLOTS_DIR, exist_ok=True)

@@ -3,11 +3,13 @@ Requirement 1d: Automated Target Leakage Guard.
 Ensures that LAD, LCX, RCA, and Cath are NEVER present in feature set X for any target.
 """
 
+import os
 import pandas as pd
 import pytest
 
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 LEAKAGE_COLUMNS = ["LAD", "LCX", "RCA", "Cath"]
-DATA_PATH = "/Users/rana/Documents/CardioLens/backend/data/z_alizadeh_sani.csv"
+DATA_PATH = os.path.join(REPO_ROOT, "backend/data/z_alizadeh_sani.csv")
 
 def build_X(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop(columns=LEAKAGE_COLUMNS, errors="raise")
